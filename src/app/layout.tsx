@@ -1,3 +1,5 @@
+import "../styles/global.css";
+
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -12,6 +14,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        <style>{"html,body{margin:0;padding:0;font-family:sans-serif;}"}</style>
+      </head>
       <body>{children}</body>
     </html>
   );
