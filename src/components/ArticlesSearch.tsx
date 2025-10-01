@@ -3,11 +3,11 @@
 import { ArticleEntry } from "@/lib/articles";
 import { useState } from "react";
 
-export const ArticlesSearch = ({
-  articles,
-}: {
-  articles: Pick<ArticleEntry, "title" | "slug" | "description">[];
-}) => {
+export type ArticlesSearchProps = {
+  articles: Pick<ArticleEntry, "title" | "slug" | "description" | "tags">[];
+};
+
+export const ArticlesSearch = ({ articles }: ArticlesSearchProps) => {
   const [query, setQuery] = useState("");
 
   return (
@@ -27,7 +27,8 @@ export const ArticlesSearch = ({
             <li key={article.slug}>
               <a href={`/articles/${article.slug}`}>
                 <h3>{article.title}</h3>
-                <p>{article.description}</p>
+                <p>Description: {article.description}</p>
+                <p>Tags: {article.tags.join(", ")}</p>
               </a>
             </li>
           ))}

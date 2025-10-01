@@ -5,15 +5,16 @@ import { z } from "zod";
 const appRoot = process.cwd();
 const articlesDir = path.join(appRoot, "src", "articles");
 
-export const ArticleEntrySchema = z.object({
+export const articleEntrySchema = z.object({
   title: z.string(),
   path: z.string(),
   active: z.boolean(),
   slug: z.string(),
   content: z.string(),
-  description: z.string().optional(),
+  description: z.string(),
+  tags: z.array(z.string()),
 });
-export type ArticleEntry = z.infer<typeof ArticleEntrySchema>;
+export type ArticleEntry = z.infer<typeof articleEntrySchema>;
 
 const readArticleDirectory = async (directory: string): Promise<string[]> => {
   const files = await readdir(directory);
@@ -60,8 +61,16 @@ const articleContentToDetails = (
     .find((line) => line.startsWith("description:"))
     ?.replace("description:", "")
     .trim();
+  const tags =
+    metadataLines
+      .find((line) => line.startsWith("tags:"))
+      ?.replace("tags:", "")
+      .trim()
+      .split(",")
+      .map((tag) => tag.trim())
+      .filter((tag) => tag.length > 0) ?? [];
 
-  if (!title || !active || !slug) {
+  if (!title || !active || !slug || !description) {
     throw new Error("Missing required metadata fields");
   }
 
@@ -71,6 +80,7 @@ const articleContentToDetails = (
     slug,
     content: content.slice(commentEnd + 3).trim(),
     description,
+    tags,
   };
 };
 
@@ -81,10 +91,21 @@ export const getArticles = async (): Promise<ArticleEntry[]> => {
   for (const filePath of filePaths) {
     const content = await readFile(filePath, "utf-8");
     const metadata = articleContentToDetails(content);
-    articles.push({
-      path: filePath,
+    if (!metadata.active) {
+      continue;
+    }
+    const parseResult = articleEntrySchema.safeParse({
       ...metadata,
+      path: filePath,
     });
+    if (!parseResult.success) {
+      console.error(
+        `Failed to parse article metadata for ${filePath}:`,
+        parseResult.error
+      );
+      continue;
+    }
+    articles.push(parseResult.data);
   }
 
   return articles;
