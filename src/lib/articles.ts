@@ -10,9 +10,14 @@ export const articleEntrySchema = z.object({
   path: z.string(),
   active: z.boolean(),
   slug: z.string(),
-  content: z.string(),
   description: z.string(),
   tags: z.array(z.string()),
+  date: z
+    .string()
+    .refine((date) => !Number.isNaN(Date.parse(date)), {
+      message: "Invalid date format",
+    })
+    .transform((date) => new Date(date)),
 });
 export type ArticleEntry = z.infer<typeof articleEntrySchema>;
 
@@ -34,9 +39,13 @@ const readArticleDirectory = async (directory: string): Promise<string[]> => {
   return filePaths.sort();
 };
 
-const articleContentToDetails = (
-  content: string
-): Omit<ArticleEntry, "path"> => {
+const articleContentToDetails = ({
+  content,
+  path,
+}: {
+  content: string;
+  path: string;
+}): ArticleEntry => {
   const commentStart = content.indexOf("<!--");
   const commentEnd = content.indexOf("-->");
   if (commentStart === -1 || commentEnd === -1 || commentEnd < commentStart) {
@@ -69,19 +78,27 @@ const articleContentToDetails = (
       .split(",")
       .map((tag) => tag.trim())
       .filter((tag) => tag.length > 0) ?? [];
+  const date = metadataLines
+    .find((line) => line.startsWith("date:"))
+    ?.replace("date:", "")
+    .trim();
 
-  if (!title || !active || !slug || !description) {
-    throw new Error("Missing required metadata fields");
-  }
-
-  return {
+  return articleEntrySchema.parse({
+    path,
     title,
-    active: active.toLowerCase() === "true",
+    active: active?.toLowerCase() === "true",
     slug,
-    content: content.slice(commentEnd + 3).trim(),
     description,
     tags,
-  };
+    date,
+  });
+};
+
+export const getArticleContent = async (
+  article: ArticleEntry
+): Promise<string> => {
+  const content = await readFile(article.path, "utf-8");
+  return content.replace(/<!--[\s\S]*?-->/g, "").trim();
 };
 
 export const getArticles = async (): Promise<ArticleEntry[]> => {
@@ -89,23 +106,17 @@ export const getArticles = async (): Promise<ArticleEntry[]> => {
 
   const articles: ArticleEntry[] = [];
   for (const filePath of filePaths) {
-    const content = await readFile(filePath, "utf-8");
-    const metadata = articleContentToDetails(content);
-    if (!metadata.active) {
+    try {
+      const content = await readFile(filePath, "utf-8");
+      const metadata = articleContentToDetails({ content, path: filePath });
+      if (!metadata.active) {
+        continue;
+      }
+      articles.push(metadata);
+    } catch (e) {
+      console.error(`Error processing file ${filePath}:`, e);
       continue;
     }
-    const parseResult = articleEntrySchema.safeParse({
-      ...metadata,
-      path: filePath,
-    });
-    if (!parseResult.success) {
-      console.error(
-        `Failed to parse article metadata for ${filePath}:`,
-        parseResult.error
-      );
-      continue;
-    }
-    articles.push(parseResult.data);
   }
 
   return articles;
@@ -129,4 +140,34 @@ export const getArticleFromSlug = async (
   }
 
   return article;
+};
+
+export const formatTag = (tag: string): string => {
+  return tag
+    .toLowerCase()
+    .replace(/[^a-z0-9]/gi, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
+};
+
+export const getAllTags = async (): Promise<{ tag: string }[]> => {
+  const articles = await getArticles();
+  const tagSet = new Set<string>();
+
+  for (const article of articles) {
+    for (const tag of article.tags) {
+      tagSet.add(formatTag(tag));
+    }
+  }
+
+  return Array.from(tagSet)
+    .sort()
+    .map((tag) => ({ tag }));
+};
+
+export const getAllArticlesForTag = async (
+  tag: string
+): Promise<ArticleEntry[]> => {
+  const articles = await getArticles();
+  return articles.filter((article) => article.tags.includes(tag));
 };

@@ -3,15 +3,18 @@
 import { ArticleEntry } from "@/lib/articles";
 import { useState } from "react";
 
-export type ArticlesSearchProps = {
+export const TagsList = ({
+  tag,
+  articles,
+}: {
+  tag: string;
   articles: ArticleEntry[];
-};
-
-export const ArticlesSearch = ({ articles }: ArticlesSearchProps) => {
+}) => {
   const [query, setQuery] = useState("");
 
   return (
     <>
+      <h2>Articles tagged with &quot;{tag}&quot;</h2>
       <input
         type="text"
         value={query}
