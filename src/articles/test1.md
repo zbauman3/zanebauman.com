@@ -3,7 +3,7 @@ title: This is a title!
 description: This is a description!
 active: true
 slug: test
-tags: test-tag, initial-post
+tags: test-tag, initial-post, shared
 date: 09/29/2025
 -->
 

@@ -1,13 +1,18 @@
 "use client";
 
-import { ArticleEntry } from "@/lib/articles";
+import { ArticleMetadata } from "@/lib/articles";
 import { useState } from "react";
+import { ArticleItem } from "./ArticleItem";
 
 export type ArticlesSearchProps = {
-  articles: ArticleEntry[];
+  articles: ArticleMetadata[];
+  hideTags?: string[];
 };
 
-export const ArticlesSearch = ({ articles }: ArticlesSearchProps) => {
+export const ArticlesSearch = ({
+  articles,
+  hideTags = [],
+}: ArticlesSearchProps) => {
   const [query, setQuery] = useState("");
 
   return (
@@ -25,11 +30,7 @@ export const ArticlesSearch = ({ articles }: ArticlesSearchProps) => {
           )
           .map((article) => (
             <li key={article.slug}>
-              <a href={`/articles/${article.slug}`}>
-                <h3>{article.title}</h3>
-                <p>Description: {article.description}</p>
-                <p>Tags: {article.tags.join(", ")}</p>
-              </a>
+              <ArticleItem article={article} hideTags={hideTags} />
             </li>
           ))}
       </ul>

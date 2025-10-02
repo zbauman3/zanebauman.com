@@ -1,12 +1,20 @@
-import { NextResponse } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico).+)"],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
 };
 
-export function middleware() {
+export function middleware(request: NextRequest) {
   if (process.env.NODE_ENV === "development") {
     return NextResponse.next();
   }
-  return new NextResponse(null, { status: 404 });
+
+  const url = request.nextUrl.clone();
+  if (url.pathname === "/") {
+    url.pathname = "/coming-soon";
+    return NextResponse.rewrite(url);
+  }
+
+  url.pathname = "/404";
+  return NextResponse.rewrite(url);
 }

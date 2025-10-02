@@ -1,15 +1,23 @@
 import { notFound } from "next/navigation";
 
-import { getAllTags, getAllArticlesForTag } from "@/lib/articles";
-import { TagsList } from "@/components/TagsList";
+import { articlesCache } from "@/lib/articles";
+import { TagList } from "@/components/TagList";
+import { PageWrapper } from "@/components/PageWrapper";
 
 type Props = {
-  params: Promise<Awaited<ReturnType<typeof getAllTags>>[number]>;
+  params: Promise<{
+    tag: string;
+  }>;
 };
 
 export const dynamic = "force-static";
 
-export const generateStaticParams = getAllTags;
+export const generateStaticParams = async (): Promise<
+  Awaited<Props["params"]>[]
+> => {
+  const allTags = await articlesCache.getAllTags();
+  return allTags.map((tag) => ({ tag }));
+};
 
 export const generateMetadata = async ({ params }: Props) => {
   try {
@@ -29,15 +37,18 @@ export const generateMetadata = async ({ params }: Props) => {
 const Page = async ({ params }: Props) => {
   try {
     const { tag } = await params;
-    const articles = await getAllArticlesForTag(tag);
+    const articles = await articlesCache.getAllForTag(tag);
     if (articles.length === 0) {
       return notFound();
     }
-
-    return <TagsList tag={tag} articles={articles} />;
+    return (
+      <PageWrapper>
+        <TagList tag={tag} articles={articles} />
+      </PageWrapper>
+    );
   } catch (e) {
     console.error(e);
-    notFound();
+    return notFound();
   }
 };
 
