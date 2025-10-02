@@ -46,6 +46,9 @@ class ArticlesCache {
       }
     }
 
+    if (process.env.NODE_ENV === "development") {
+      return;
+    }
     this.isHydrated = true;
   }
 
@@ -163,7 +166,8 @@ class ArticlesCache {
         .trim()
         .split(",")
         .map((tag) => ArticlesCache.formatTag(tag))
-        .filter((tag) => tag.length > 0) ?? [];
+        .filter((tag) => tag.length > 0)
+        .sort() ?? [];
     const date = metadataLines
       .find((line) => line.startsWith("date:"))
       ?.replace("date:", "")

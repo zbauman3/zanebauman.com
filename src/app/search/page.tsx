@@ -12,8 +12,7 @@ export const metadata = {
 const Page = async () => {
   const articles = await articlesCache.getAll();
   return (
-    <PageWrapper>
-      <h2>Search</h2>
+    <PageWrapper title="Search">
       <ArticlesSearch articles={articles} />
     </PageWrapper>
   );

@@ -1,19 +1,28 @@
 @import "tailwindcss";
 
+html,
+body {
+  @apply bg-white text-black dark:bg-neutral-950 dark:text-neutral-300 font-[sans-serif] m-0 p-0;
+}
+
+body * {
+  @apply box-border;
+}
+
 @layer components {
   h1 {
-    @apply text-6xl font-bold;
+    @apply text-5xl font-bold;
   }
   h2 {
-    @apply text-5xl font-semibold;
-  }
-  h3 {
     @apply text-4xl font-semibold;
   }
-  h4 {
+  h3 {
     @apply text-3xl font-semibold;
   }
-  h5 {
+  h4 {
     @apply text-2xl font-semibold;
+  }
+  h5 {
+    @apply text-xl font-semibold;
   }
 }

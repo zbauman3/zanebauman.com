@@ -1,25 +1,21 @@
 "use client";
 
-import Link from "next/link";
+import { Navigation } from "./Navigation";
 
-export const PageWrapper = ({ children }: { children: React.ReactNode }) => {
+export const PageWrapper = ({
+  children,
+  title,
+}: {
+  children: React.ReactNode;
+  title?: string;
+}) => {
   return (
-    <div className="max-w-4xl mx-auto px-4">
-      <div>
-        <Link href="/" className="text-2xl font-bold">
-          Home
-        </Link>
-        <Link href="/search" className="ml-4 text-2xl font-bold">
-          Search
-        </Link>
-        <Link href="/articles" className="ml-4 text-2xl font-bold">
-          All Articles
-        </Link>
-        <Link href="/tags" className="ml-4 text-2xl font-bold">
-          All Tags
-        </Link>
-      </div>
-      <main>{children}</main>
-    </div>
+    <>
+      <Navigation />
+      <main className="block max-w-3xl w-full mx-auto p-4">
+        {title && <h1 className="mb-10">{title}</h1>}
+        {children}
+      </main>
+    </>
   );
 };

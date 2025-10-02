@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 
 import { articlesCache } from "@/lib/articles";
-import { TagList } from "@/components/TagList";
+import { ArticlesSearch } from "@/components/ArticlesSearch";
 import { PageWrapper } from "@/components/PageWrapper";
 
 type Props = {
@@ -24,7 +24,7 @@ export const generateMetadata = async ({ params }: Props) => {
     const { tag } = await params;
 
     return {
-      title: `Zane Bauman | Tag | ${tag}`,
+      title: `Zane Bauman | Tag: ${tag}`,
     };
   } catch (e) {
     console.error(e);
@@ -42,8 +42,8 @@ const Page = async ({ params }: Props) => {
       return notFound();
     }
     return (
-      <PageWrapper>
-        <TagList tag={tag} articles={articles} />
+      <PageWrapper title={`Tag "${tag}"`}>
+        <ArticlesSearch articles={articles} hideTags={[tag]} />
       </PageWrapper>
     );
   } catch (e) {

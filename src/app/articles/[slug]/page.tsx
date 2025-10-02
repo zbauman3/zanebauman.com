@@ -1,10 +1,18 @@
+import "../../../styles/markdown.css";
+
 import { notFound } from "next/navigation";
-import markdownit from "markdown-it";
+import Markdown from "react-markdown";
+import rehypeRaw from "rehype-raw";
+import rehypeSlug from "rehype-slug";
+import rehypeToc from "@jsdevtools/rehype-toc";
+import rehypeAutolinkHeadings from "rehype-autolink-headings";
+import remarkGfm from "remark-gfm";
 
 import { articlesCache } from "@/lib/articles";
 import { Metadata } from "next";
 import { formatDate } from "@/lib/dates";
 import { PageWrapper } from "@/components/PageWrapper";
+import { ArticleDetails } from "@/components/ArticleDetails";
 
 type Props = {
   params: Promise<{ slug: string }>;
@@ -43,6 +51,31 @@ export const generateMetadata = async ({ params }: Props) => {
   }
 };
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const customizeTOC = (toc: any) => {
+  // console.log(JSON.stringify(toc, null, 2));
+  // Customize the TOC as needed
+  return {
+    type: "element",
+    tagName: "div",
+    properties: { className: "toc-wrapper" },
+    children: [
+      {
+        type: "element",
+        tagName: "div",
+        properties: { className: "toc-title" },
+        children: [
+          {
+            type: "text",
+            value: "Table of Contents",
+          },
+        ],
+      },
+      toc,
+    ],
+  };
+};
+
 const Page = async ({ params }: Props) => {
   try {
     const { slug } = await params;
@@ -50,10 +83,23 @@ const Page = async ({ params }: Props) => {
     if (!article) {
       return notFound();
     }
-    const __html = markdownit().render(article.content);
     return (
       <PageWrapper>
-        <div dangerouslySetInnerHTML={{ __html }} />
+        <ArticleDetails TitleComponent="h1" article={article} disableLink />
+        <div className="h-7" />
+        <div className="markdown">
+          <Markdown
+            rehypePlugins={[
+              rehypeRaw,
+              rehypeSlug,
+              [rehypeToc, { nav: false, customizeTOC }],
+              [rehypeAutolinkHeadings, { behavior: "wrap" }],
+            ]}
+            remarkPlugins={[remarkGfm]}
+          >
+            {article.content}
+          </Markdown>
+        </div>
       </PageWrapper>
     );
   } catch (e) {

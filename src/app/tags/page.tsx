@@ -9,16 +9,24 @@ export const metadata = {
   description: "Browse all tags",
 };
 
+const TagItem = ({ tag }: { tag: string }) => (
+  <li>
+    <Link
+      href={`/tags/${tag}`}
+      className="block p-3 rounded-4xl bg-neutral-200 dark:bg-neutral-800 text-xl"
+    >
+      {tag}
+    </Link>
+  </li>
+);
+
 const Page = async () => {
   const tags = await articlesCache.getAllTags();
   return (
-    <PageWrapper>
-      <h2>All Tags</h2>
-      <ul>
+    <PageWrapper title="All Tags">
+      <ul className="flex flex-wrap flex-row justify-stretch items-stretch gap-2">
         {tags.map((tag) => (
-          <li key={tag}>
-            <Link href={`/tags/${tag}`}>{tag}</Link>
-          </li>
+          <TagItem key={tag} tag={tag} />
         ))}
       </ul>
     </PageWrapper>

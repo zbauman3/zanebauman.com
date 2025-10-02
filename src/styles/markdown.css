@@ -1,0 +1,121 @@
+@import "tailwindcss";
+
+@layer base {
+  .markdown {
+    h1 {
+      @apply mb-8;
+    }
+
+    h2 {
+      @apply mb-6;
+    }
+
+    h3 {
+      @apply mb-4;
+    }
+
+    h4 {
+      @apply mb-3;
+    }
+
+    h5 {
+      @apply mb-2;
+    }
+
+    h1,
+    h2,
+    h3,
+    h4,
+    h5 {
+      a {
+        color: inherit;
+      }
+      a::before {
+        position: absolute;
+        margin-left: -0.6em;
+        content: "#";
+        opacity: 0;
+        transition: opacity 0.1s;
+      }
+      a:hover::before {
+        opacity: 1;
+      }
+    }
+
+    a {
+      @apply text-blue-600 dark:text-blue-400;
+    }
+
+    p {
+      @apply mb-6;
+    }
+
+    blockquote {
+      @apply border-l-4 border-gray-300 pl-4 italic text-gray-600 mb-6 dark:border-gray-600 dark:text-gray-400;
+
+      p {
+        @apply last:mb-0;
+      }
+    }
+
+    code {
+      @apply bg-gray-200 dark:bg-gray-800 px-1;
+    }
+
+    table {
+      @apply w-full overflow-hidden rounded-sm border-collapse;
+
+      thead tr {
+        @apply bg-neutral-200 dark:bg-neutral-800;
+        th {
+          @apply text-left last:text-right p-1 text-lg border border-neutral-200 dark:border-neutral-800;
+        }
+      }
+
+      tbody tr {
+        &:nth-child(even) {
+          @apply bg-neutral-200 dark:bg-neutral-800;
+        }
+        td {
+          @apply text-left last:text-right p-1 border border-neutral-200 dark:border-neutral-800;
+        }
+      }
+    }
+
+    ul,
+    ol {
+      @apply pb-6;
+
+      ul,
+      ol {
+        @apply pl-4 pb-0;
+      }
+    }
+
+    ul {
+      li {
+        @apply list-disc;
+      }
+    }
+
+    ol {
+      li {
+        @apply list-decimal;
+      }
+    }
+
+    .toc-wrapper {
+      @apply my-4 py-4 border-y border-gray-200 dark:border-gray-700;
+
+      .toc-title {
+        @apply text-xl font-semibold mb-4;
+      }
+
+      ol {
+        li {
+          @apply list-none;
+        }
+      }
+    }
+  }
+}
