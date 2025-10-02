@@ -16,5 +16,5 @@ export function middleware(request: NextRequest) {
   }
 
   url.pathname = "/404";
-  return NextResponse.rewrite(url);
+  return NextResponse.rewrite(url, { status: 404 });
 }

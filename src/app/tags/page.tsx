@@ -1,4 +1,3 @@
-import { ArticleItem } from "@/components/ArticleItem";
 import { PageWrapper } from "@/components/PageWrapper";
 import { articlesCache } from "@/lib/articles";
 import Link from "next/link";
