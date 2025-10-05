@@ -32,9 +32,9 @@ export const Navigation = () => {
         <ul className="flex flex-row flex-nowrap items-start justify-start space-x-2 overflow-hidden max-w-3xl w-full">
           <NavLinkItem href="/" text="Home" isActive={pathname === "/"} />
           <NavLinkItem
-            href="/search"
-            text="Search"
-            isActive={pathname === "/search"}
+            href="/articles"
+            text="Articles"
+            isActive={pathname === "/articles"}
           />
           <NavLinkItem
             href="/tags"

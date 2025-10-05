@@ -5,14 +5,14 @@ import { articlesCache } from "@/lib/articles";
 export const dynamic = "force-static";
 
 export const metadata = {
-  title: "Zane Bauman | Search",
-  description: "Search articles",
+  title: "Zane Bauman | All Articles",
+  description: "All Articles",
 };
 
 const Page = async () => {
   const articles = await articlesCache.getAll();
   return (
-    <PageWrapper title="Search">
+    <PageWrapper title="All Articles">
       <ArticlesSearch articles={articles} />
     </PageWrapper>
   );
