@@ -3,7 +3,7 @@ title: DigiRoll
 description: DigiRoll is a digital dice roller.
 active: true
 slug: digi-roll
-tags: arduino, avr, atmel, microchip, dnd, dungeons-and-dragons, pcb
+tags: arduino, avr, atmel, microchip, dnd, dungeons-and-dragons, pcb, highlight
 date: 12/15/2024
 -->
 

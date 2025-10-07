@@ -3,7 +3,7 @@ title: Watson Heirloom
 description: A project to build a 3D-printed "Telemetry Receiver Module" for the Apex Legends character "Watson".
 active: true
 slug: watson-heirloom
-tags: arduino, esp32, esp32-s2, Espressif, 3D-printing, graphics
+tags: arduino, esp32, esp32-s2, Espressif, 3D-printing, graphics, highlight
 date: 03/15/2024
 -->
 
