@@ -40,6 +40,9 @@ export const generateMetadata = async ({ params }: Props) => {
     const metadata: Metadata = {
       title: `Zane Bauman | ${article.title} | ${formatDate(article.date)}`,
       description: article.description,
+      openGraph: {
+        images: article.image,
+      },
     };
 
     return metadata;

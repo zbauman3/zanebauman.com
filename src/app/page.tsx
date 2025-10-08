@@ -6,8 +6,13 @@ import { articlesCache } from "@/lib/articles";
 
 export const dynamic = "force-static";
 
+const mainImage = "/assets/shared/zane.jpeg";
+
 export const metadata = {
   title: "Zane Bauman | Home",
+  openGraph: {
+    images: mainImage,
+  },
 };
 
 export default async function Home() {
@@ -18,7 +23,7 @@ export default async function Home() {
     <PageWrapper>
       <section className="flex flex-row flex-wrap md:flex-nowrap items-start justify-start gap-6 mb-6">
         <Image
-          src="/assets/shared/zane.jpeg"
+          src={mainImage}
           width="150"
           height="150"
           alt="Zane Bauman"
