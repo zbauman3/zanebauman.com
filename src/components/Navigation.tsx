@@ -15,7 +15,7 @@ const NavLinkItem = ({
   <li>
     <Link
       href={href}
-      className={`hover:bg-neutral-100 dark:hover:bg-neutral-800 py-4 px-4 block ${
+      className={`hover:bg-neutral-100 dark:hover:bg-neutral-800 p-4 block ${
         isActive ? "bg-neutral-100 dark:bg-neutral-800" : ""
       }`}
     >
@@ -27,22 +27,16 @@ const NavLinkItem = ({
 export const Navigation = () => {
   const pathname = usePathname();
   return (
-    <>
-      <nav className="flex flex-row flex-nowrap items-center justify-center top-0 left-0 w-screen bg-inherit border-b-[1px] border-b-solid border-b-neutral-200 dark:border-b-neutral-800 ">
-        <ul className="flex flex-row flex-nowrap items-start justify-start space-x-2 overflow-hidden max-w-3xl w-full">
-          <NavLinkItem href="/" text="Home" isActive={pathname === "/"} />
-          <NavLinkItem
-            href="/articles"
-            text="Articles"
-            isActive={pathname === "/articles"}
-          />
-          <NavLinkItem
-            href="/tags"
-            text="Tags"
-            isActive={pathname === "/tags"}
-          />
-        </ul>
-      </nav>
-    </>
+    <nav className="grow-0 shrink-0 flex flex-row flex-nowrap items-center justify-center w-screen bg-inherit border-b-[1px] border-b-solid border-b-neutral-200 dark:border-b-neutral-800">
+      <ul className="flex flex-row flex-nowrap items-start justify-start space-x-2 overflow-hidden max-w-3xl w-full">
+        <NavLinkItem href="/" text="Home" isActive={pathname === "/"} />
+        <NavLinkItem
+          href="/articles"
+          text="Articles"
+          isActive={pathname === "/articles"}
+        />
+        <NavLinkItem href="/tags" text="Tags" isActive={pathname === "/tags"} />
+      </ul>
+    </nav>
   );
 };

@@ -172,6 +172,10 @@ class ArticlesCache {
       .find((line) => line.startsWith("date:"))
       ?.replace("date:", "")
       .trim();
+    const image = metadataLines
+      .find((line) => line.startsWith("image:"))
+      ?.replace("image:", "")
+      .trim();
 
     return ArticlesCache.articleEntrySchema.parse({
       title,
@@ -181,6 +185,7 @@ class ArticlesCache {
       tags,
       date,
       content: content.replace(/<!--[\s\S]*?-->/g, "").trim(),
+      image,
     });
   }
 
@@ -217,6 +222,7 @@ class ArticlesCache {
     slug: z.string(),
     description: z.string(),
     tags: z.array(z.string()),
+    image: z.string().optional(),
     date: z
       .string()
       .refine((date) => !Number.isNaN(Date.parse(date)), {

@@ -1,8 +1,10 @@
 "use client";
+import { ReactNode } from "react";
+
+import Link from "next/link";
 
 import { ArticleMetadata } from "@/lib/articles";
 import { formatDate } from "@/lib/dates";
-import Link from "next/link";
 import { TagList } from "./TagList";
 
 export type ArticleItemProps = {
@@ -11,36 +13,64 @@ export type ArticleItemProps = {
   TitleComponent: React.ElementType;
   titleClassName?: string;
   disableLink?: boolean;
+  image?: string;
+};
+
+const ArticleLink = ({
+  slug,
+  children,
+  disableLink,
+}: {
+  children: ReactNode;
+  slug: string;
+  disableLink: boolean;
+}) => {
+  if (disableLink) {
+    return <div className="block mb-3">{children}</div>;
+  }
+
+  return (
+    <Link className="block mb-3" href={`/articles/${slug}`}>
+      {children}
+    </Link>
+  );
 };
 
 export const ArticleDetails = ({
-  article,
-  hideTags = [],
+  image,
   TitleComponent,
-  titleClassName,
+  article,
   disableLink = false,
+  hideTags,
+  titleClassName,
 }: ArticleItemProps) => {
   const innerContent = (
     <>
-      <TitleComponent className={titleClassName}>
-        {article.title}
-      </TitleComponent>
-      <p className="text-sm text-neutral-600 dark:text-neutral-500 pt-0.5">
-        {formatDate(article.date)}
-      </p>
-      <p>{article.description}</p>
+      <ArticleLink slug={article.slug} disableLink={disableLink}>
+        <TitleComponent className={titleClassName}>
+          {article.title}
+        </TitleComponent>
+        <p className="text-sm text-neutral-700 dark:text-neutral-400 pt-0.5">
+          {formatDate(article.date)}
+        </p>
+        <p>{article.description}</p>
+      </ArticleLink>
+      <TagList tags={article.tags} hideTags={hideTags} />
     </>
   );
 
+  if (!image) {
+    return <article>{innerContent}</article>;
+  }
+
   return (
-    <article>
-      {disableLink && <div className="block mb-3">{innerContent}</div>}
-      {!disableLink && (
-        <Link href={`/articles/${article.slug}`} className="block mb-3">
-          {innerContent}
-        </Link>
-      )}
-      <TagList tags={article.tags} hideTags={hideTags} />
+    <article
+      className="w-full bg-center bg-cover rounded-xl overflow-hidden flex flex-col flex-nowrap justify-end items-stretch pt-[50%]"
+      style={{ backgroundImage: `url(${image})` }}
+    >
+      <div className="p-3 backdrop-blur-md bg-neutral-300/70 dark:bg-neutral-900/70 break-words">
+        {innerContent}
+      </div>
     </article>
   );
 };

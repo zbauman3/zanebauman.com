@@ -7,7 +7,7 @@ import { articlesCache } from "@/lib/articles";
 export const dynamic = "force-static";
 
 export const metadata = {
-  title: "Zane Bauman",
+  title: "Zane Bauman | Home",
 };
 
 export default async function Home() {
@@ -31,12 +31,12 @@ export default async function Home() {
             problems.
           </p>
           <p className="mb-3">
-            By day, I&apos;m a frontend-platform engineer - building system
-            foundations with Vercel/Next.js, TypeScript, Cloudflare Workers,
+            For work, I&apos;m a frontend-platform engineer - building system
+            foundations in Vercel/Next.js, TypeScript, Cloudflare Workers,
             Microfrontends, Monorepos, and Mobile applications.
           </p>
           <p>
-            By night, I obsess over embedded systems - researching, tinkering,
+            For fun, I obsess over embedded systems - researching, tinkering,
             and building personal projects that double as both experiments and
             education.
           </p>
@@ -53,6 +53,7 @@ export default async function Home() {
                   article={article}
                   hideTags={["highlight"]}
                   titleClassName="text-2xl"
+                  image={article.image}
                 />
               </li>
             ))}

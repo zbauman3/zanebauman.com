@@ -5,9 +5,10 @@ active: true
 slug: digi-roll
 tags: arduino, avr, atmel, microchip, dnd, dungeons-and-dragons, pcb, highlight
 date: 12/15/2024
+image: /assets/digi-roll/media/assembled/main-image.jpeg
 -->
 
-<img src="/assets/digi-roll/media/assembled/front-side.jpeg" class="mb-6 w-full" />
+<img src="/assets/digi-roll/media/assembled/main-image.jpeg" class="mb-6 w-full" />
 
 ## Hardware
 

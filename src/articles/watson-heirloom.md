@@ -5,6 +5,7 @@ active: true
 slug: watson-heirloom
 tags: arduino, esp32, esp32-s2, Espressif, 3D-printing, graphics, highlight
 date: 03/15/2024
+image: /assets/watson-heirloom/wattson-heirloom.jpg
 -->
 
 <img src="/assets/watson-heirloom/wattson-heirloom.jpg" className="w-full mb-6" />
