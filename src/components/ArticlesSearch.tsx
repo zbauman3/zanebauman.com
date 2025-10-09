@@ -1,14 +1,10 @@
 "use client";
 
-import { ArticleMetadata } from "@/lib/articles";
 import { useState } from "react";
-import { ArticleDetails } from "./ArticleDetails";
+import { ArticlesList, type ArticlesListProps } from "./ArticlesList";
 import { searchArticles } from "@/lib/search";
 
-export type ArticlesSearchProps = {
-  articles: ArticleMetadata[];
-  hideTags?: string[];
-};
+export type ArticlesSearchProps = ArticlesListProps;
 
 export const ArticlesSearch = ({
   articles,
@@ -33,18 +29,7 @@ export const ArticlesSearch = ({
           {query.trim().length > 0 && "found"}
         </p>
       </search>
-      <ul className="flex flex-col gap-8">
-        {filteredArticles.map((article) => (
-          <li key={article.slug}>
-            <ArticleDetails
-              TitleComponent="h2"
-              article={article}
-              hideTags={hideTags}
-              titleClassName="text-3xl"
-            />
-          </li>
-        ))}
-      </ul>
+      <ArticlesList articles={filteredArticles} hideTags={hideTags} />
     </>
   );
 };

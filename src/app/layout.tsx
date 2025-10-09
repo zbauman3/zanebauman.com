@@ -1,12 +1,6 @@
 import "../styles/global.css";
 
 import { GoogleAnalytics } from "@next/third-parties/google";
-import type { Metadata } from "next";
-
-export const metadata: Metadata = {
-  title: "Zane Bauman",
-  description: "Zane Bauman",
-};
 
 export default function RootLayout({
   children,

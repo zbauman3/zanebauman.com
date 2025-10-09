@@ -16,14 +16,12 @@ const TagListItem = ({ tag }: { tag: string }) => (
   </li>
 );
 
-export const TagList = ({ tags, hideTags = [] }: TagListProps) => {
-  return (
-    <ul className="inline-flex flex-wrap flex-row gap-2">
-      {tags
-        .filter((tag) => !hideTags.includes(tag))
-        .map((tag) => (
-          <TagListItem key={tag} tag={tag} />
-        ))}
-    </ul>
-  );
-};
+export const TagList = ({ tags, hideTags = [] }: TagListProps) => (
+  <ul className="inline-flex flex-wrap flex-row gap-2">
+    {tags
+      .filter((tag) => !hideTags.includes(tag))
+      .map((tag) => (
+        <TagListItem key={tag} tag={tag} />
+      ))}
+  </ul>
+);
