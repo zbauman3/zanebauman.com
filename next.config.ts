@@ -1,7 +1,30 @@
 import type { NextConfig } from "next";
 
-const nextConfig: NextConfig = {
-  /* config options here */
+const configFn = (phase: string) => {
+  const NODE_ENV = process.env.NODE_ENV;
+  const VERCEL_ENV = process.env.VERCEL_ENV;
+  let NEXT_PUBLIC_SITE_BASE_URL = process.env.NEXT_PUBLIC_SITE_BASE_URL;
+
+  if (NODE_ENV === "development") {
+    NEXT_PUBLIC_SITE_BASE_URL = "http://localhost:3000";
+  } else if (VERCEL_ENV === "preview") {
+    NEXT_PUBLIC_SITE_BASE_URL = `https://${process.env.VERCEL_URL}`;
+  }
+
+  const resolvedEnv: NextConfig["env"] = {
+    NEXT_PUBLIC_SITE_BASE_URL,
+  };
+
+  if (NODE_ENV !== "production") {
+    console.log(`Phase: ${phase}`);
+    console.log(`Env: ${JSON.stringify(resolvedEnv, null, 2)}`);
+  }
+
+  const nextConfig: NextConfig = {
+    env: resolvedEnv,
+  };
+
+  return nextConfig;
 };
 
-export default nextConfig;
+export default configFn;

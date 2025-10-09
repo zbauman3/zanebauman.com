@@ -13,6 +13,7 @@ import { Metadata } from "next";
 import { formatDate } from "@/lib/dates";
 import { PageWrapper } from "@/components/PageWrapper";
 import { ArticleDetails } from "@/components/ArticleDetails";
+import { SITE_BASE_URL } from "@/lib/env";
 
 type Props = {
   params: Promise<{ slug: string }>;
@@ -40,6 +41,7 @@ export const generateMetadata = async ({ params }: Props) => {
     const metadata: Metadata = {
       title: `Zane Bauman | ${article.title} | ${formatDate(article.date)}`,
       description: article.description,
+      metadataBase: new URL(SITE_BASE_URL),
       openGraph: {
         images: article.image,
       },

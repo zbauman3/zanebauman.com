@@ -4,6 +4,7 @@ import { ArticleHighlight } from "@/components/ArticleHighlight";
 import { PageWrapper } from "@/components/PageWrapper";
 import { articlesCache } from "@/lib/articles";
 import { ArticlesList } from "@/components/ArticlesList";
+import { SITE_BASE_URL } from "@/lib/env";
 
 export const dynamic = "force-static";
 
@@ -11,6 +12,7 @@ const mainImage = "/assets/shared/zane.jpeg";
 
 export const metadata = {
   title: "Zane Bauman | Home",
+  metadataBase: new URL(SITE_BASE_URL),
   openGraph: {
     images: mainImage,
   },
