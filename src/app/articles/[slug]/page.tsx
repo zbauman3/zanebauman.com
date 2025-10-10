@@ -14,6 +14,7 @@ import { formatDate } from "@/lib/dates";
 import { PageWrapper } from "@/components/PageWrapper";
 import { ArticleDetails } from "@/components/ArticleDetails";
 import { SITE_BASE_URL } from "@/lib/env";
+import { markdownComponents } from "@/components/markdown/MarkdownWrapper";
 
 type Props = {
   params: Promise<{ slug: string }>;
@@ -94,6 +95,7 @@ const Page = async ({ params }: Props) => {
         <div className="h-7" />
         <div className="markdown">
           <Markdown
+            components={markdownComponents}
             rehypePlugins={[
               rehypeRaw,
               rehypeSlug,

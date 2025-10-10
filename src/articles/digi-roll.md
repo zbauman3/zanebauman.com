@@ -30,11 +30,10 @@ The final major component was the boost converter. Although I could have integra
 
 By combining these hardware choices with low-current LEDs and efficient software, I achieved a reasonable power profile. Using [Nordic's Power Profiler Kit II](https://www.nordicsemi.com/Products/Development-hardware/Power-Profiler-Kit-2), I analyzed the current consumption during different operating modes. At maximum current draw, the device consumes an average of roughly 60mA (see image 1 below), and in deep sleep mode, it consumes about 11µA (see image 2 below). Considering that a typical AA battery has a rough capacity of around 2,200mAh at these draw rates, this translates to approximately 70 hours of operation at maximum current draw and up to 400,000 hours (or about 45 years) in sleep mode.
 
-Current consumption during active mode:
-<img src="/assets/digi-roll/media/power/active-large.png" class="w-full" />
-
-Current consumption during sleep mode:
-<img src="/assets/digi-roll/media/power/sleep-large.png" class="w-full" />
+<div data-component="MediaCollage" class="mb-6">
+  <img src="/assets/digi-roll/media/power/active-large.png" alt="Current consumption during active mode" />
+  <img src="/assets/digi-roll/media/power/sleep-large.png" alt="Current consumption during sleep mode" />
+</div>
 
 ## Software
 
@@ -49,6 +48,30 @@ The project required handling multiple tasks concurrently, and I would normally 
 For the software architecture, I used a MVC pattern. This approach allowed for a clear separation of input, state, and output logic. Controllers manage the buttons and Hall effect sensors, views handle the LEDs and 7-segment display, and a single “state” model ties everything together. Overall, this organization worked well, although some controller logic ended up in the state model. I may revisit this in a future iteration to improve the separation of concerns.
 
 The final program occupies 6,994 bytes of flash and uses 269 bytes of RAM.
+
+## Media
+
+<video controls class="mb-6 w-full">
+  <source src="/assets/digi-roll/media/assembled/usage-demo-1.MOV">
+</video>
+
+<div data-component="MediaCollage" class="mb-6">
+  <img src="/assets/digi-roll/media/assembled/front.jpeg" />
+  <img src="/assets/digi-roll/media/assembled/front-side.jpeg"/>
+  <img src="/assets/digi-roll/media/assembled/front-side-2.jpeg" />
+  <img src="/assets/digi-roll/media/assembled/back-side.jpeg" />
+  <img src="/assets/digi-roll/media/assembled/front-on.jpeg" />
+  <img src="/assets/digi-roll/media/assembled/back.jpeg" alt="Uses 2x AA batteries" />
+  <img src="/assets/digi-roll/media/assembled/front-open.jpeg" />
+  <img src="/assets/digi-roll/media/assembled/back-open.jpeg" alt="The battery pack is attached with a long cord to allow the back to slide off" />
+  <img src="/assets/digi-roll/media/wip/assembled-pcb-front.jpeg" />
+  <img src="/assets/digi-roll/media/wip/assembled-pcb-back.jpeg" />
+  <img src="/assets/digi-roll/media/assembled/spinner.jpeg" />
+  <img src="/assets/digi-roll/media/wip/prototype.jpeg" />
+  <img src="/assets/digi-roll/media/wip/prototype-pcb.jpeg" />
+  <img src="/assets/digi-roll/KiCad/schema.png" />
+  <img src="/assets/digi-roll/KiCad/pcb.png" />
+</div>
 
 ## Usage
 
@@ -113,37 +136,3 @@ After rolling multiple dice, the currently selected die’s light will stay illu
 | Hot glue           | Securing the display and the magnet holer                             | -     | N/A                                                    |
 | Tacking screws     | Attaching the battery holder to the case                              | 2     | N/A                                                    |
 | Header pins        | Attaching the breakout boards and a ISP connection for programming    | 14    | N/A                                                    |
-
-<br />
-
-## Media
-
-### Assembled
-
-<video controls class="w-full mb-6">
-  <source src="/assets/digi-roll/media/assembled/usage-demo-1.MOV">
-</video>
-<img src="/assets/digi-roll/media/assembled/front.jpeg" class="w-full mb-6" />
-<img src="/assets/digi-roll/media/assembled/front-side.jpeg" class="w-full mb-6" />
-<img src="/assets/digi-roll/media/assembled/front-side-2.jpeg" class="w-full mb-6" />
-<img src="/assets/digi-roll/media/assembled/back-side.jpeg" class="w-full mb-6" />
-<img src="/assets/digi-roll/media/assembled/front-on.jpeg" class="w-full mb-6" />
-<img src="/assets/digi-roll/media/assembled/back.jpeg" class="w-full mb-6" />
-<img src="/assets/digi-roll/media/assembled/front-open.jpeg" class="w-full mb-6" />
-<img src="/assets/digi-roll/media/assembled/back-open.jpeg" class="w-full mb-6" />
-
-### PCB
-
-<img src="/assets/digi-roll/media/wip/assembled-pcb-front.jpeg" class="w-full mb-6" />
-<img src="/assets/digi-roll/media/wip/assembled-pcb-back.jpeg" class="w-full mb-6" />
-<img src="/assets/digi-roll/media/assembled/spinner.jpeg" class="w-full mb-6" />
-
-### Prototype
-
-<img src="/assets/digi-roll/media/wip/prototype.jpeg" class="w-full mb-6" />
-<img src="/assets/digi-roll/media/wip/prototype-pcb.jpeg" class="w-full mb-6" />
-
-### Schemas
-
-<img src="/assets/digi-roll/KiCad/schema.png" class="w-full mb-6" />
-<img src="/assets/digi-roll/KiCad/pcb.png" class="w-full mb-6" />
