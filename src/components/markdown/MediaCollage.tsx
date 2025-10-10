@@ -37,7 +37,6 @@ const MediaItem = ({
   className: string;
 }) => {
   const [isOpen, setIsOpen] = useState(false);
-
   // if video, force controls
   if (item.type === "video") {
     return (
@@ -78,9 +77,9 @@ const MediaItem = ({
     <>
       {smallImg}
       {isOpen && (
-        <RootPortal className="fixed h-full w-full top-0 left-0 z-50 cursor-zoom-out">
+        <RootPortal className="fixed h-screen w-screen top-0 left-0 z-50 cursor-zoom-out bg-neutral-100/90 dark:bg-neutral-900/90">
           <div
-            className="flex flex-col flex-nowrap justify-center items-center gap-1 h-full w-full p-4 bg-neutral-100/90 dark:bg-neutral-900/90"
+            className="flex flex-col flex-nowrap justify-center items-center gap-1 h-full w-full p-4"
             onClick={() => setIsOpen(false)}
           >
             {largeImg}

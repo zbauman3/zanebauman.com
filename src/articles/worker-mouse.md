@@ -13,16 +13,14 @@ This project uses [V-USB](https://www.obdev.at/products/vusb/index.html), for a 
 
 ## Media
 
-<img src="/assets/worker-mouse/assembled.jpeg" class="w-full mb-6" />
-<img src="/assets/worker-mouse/board-top.jpeg" class="w-full mb-6" />
-<img src="/assets/worker-mouse/board-bottom.jpeg" class="w-full mb-6" />
-<img src="/assets/worker-mouse/board-side.jpeg" class="w-full mb-6" />
-<img src="/assets/worker-mouse/case-top.jpeg" class="w-full mb-6" />
-<img src="/assets/worker-mouse/case-bottom.jpeg" class="w-full mb-6" />
-
-<video controls class="w-full mb-6">
-  <source src="/assets/worker-mouse/video.mov">
-</video>
+<div data-component="MediaCollage" class="mb-6">
+  <img src="/assets/worker-mouse/assembled.jpeg"/>
+  <img src="/assets/worker-mouse/board-top.jpeg"/>
+  <img src="/assets/worker-mouse/board-bottom.jpeg"/>
+  <img src="/assets/worker-mouse/board-side.jpeg"/>
+  <img src="/assets/worker-mouse/case-top.jpeg"/>
+  <img src="/assets/worker-mouse/case-bottom.jpeg"/>
+</div>
 
 ## Parts List
 

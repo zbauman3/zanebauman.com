@@ -39,6 +39,7 @@ export const RootPortal = ({
       document.body.removeChild(el);
       setElementRef(null);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   if (!elementRef) {
