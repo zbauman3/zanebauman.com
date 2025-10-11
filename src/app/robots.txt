@@ -1,0 +1,3 @@
+User-Agent: *
+Allow: /
+Sitemap: https://www.zanebauman.com/sitemap.xml

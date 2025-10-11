@@ -8,6 +8,8 @@ date: 03/15/2024
 image: /assets/watson-heirloom/media/cover.jpeg
 -->
 
+<img src="/assets/watson-heirloom/media/cover.jpeg" class="w-full mb-6" />
+
 Wattson is a character from the video game [Apex Legends](https://www.ea.com/games/apex-legends). This is a project to build a 3D-printed version of her "Telemetry Receiver Module" [Heirloom](https://apexlegends.fandom.com/wiki/Heirloom), with functioning electronics (not a real radar, thought).
 
 ## Media

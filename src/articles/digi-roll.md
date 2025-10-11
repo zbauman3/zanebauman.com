@@ -8,6 +8,8 @@ date: 12/15/2024
 image: /assets/digi-roll/media/assembled/main-image.jpeg
 -->
 
+<img src="/assets/digi-roll/media/assembled/main-image.jpeg" class="w-full mb-6" />
+
 ## Hardware
 
 > See the [Parts List](#parts-list) for specifics and URLs for the exact parts.
