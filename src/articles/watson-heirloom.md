@@ -5,35 +5,33 @@ active: true
 slug: watson-heirloom
 tags: arduino, esp32, esp32-s2, Espressif, 3D-printing, graphics, highlight
 date: 03/15/2024
-image: /assets/watson-heirloom/wattson-heirloom.jpg
+image: /assets/watson-heirloom/media/cover.jpeg
 -->
-
-<img src="/assets/watson-heirloom/wattson-heirloom.jpg" className="w-full mb-6" />
 
 Wattson is a character from the video game [Apex Legends](https://www.ea.com/games/apex-legends). This is a project to build a 3D-printed version of her "Telemetry Receiver Module" [Heirloom](https://apexlegends.fandom.com/wiki/Heirloom), with functioning electronics (not a real radar, thought).
 
 ## Media
 
-<video controls class="inline-block w-full md:w-[49%] mb-6">
-  <source src="/assets/watson-heirloom/media/videos/Radar Screen.MOV">
+<video controls class="inline-block w-full md:w-[49%] mb-6" poster="/assets/watson-heirloom/media/videos/radar-screen-poster.jpg">
+  <source src="/assets/watson-heirloom/media/videos/radar-screen.mp4">
 </video>
-<video controls class="inline-block w-full md:w-[49%] mb-6">
-  <source src="/assets/watson-heirloom/media/videos/Rainbow Lights.MOV">
+<video controls class="inline-block w-full md:w-[49%] mb-6" poster="/assets/watson-heirloom/media/videos/rainbow-lights-poster.jpg">
+  <source src="/assets/watson-heirloom/media/videos/rainbow-lights.mp4">
 </video>
-<video controls class="inline-block w-full md:w-[49%] mb-6">
-  <source src="/assets/watson-heirloom/media/videos/Trigger.MOV">
+<video controls class="inline-block w-full md:w-[49%] mb-6" poster="/assets/watson-heirloom/media/videos/trigger-poster.jpg">
+  <source src="/assets/watson-heirloom/media/videos/trigger.mp4">
 </video>
-<video controls class="inline-block w-full md:w-[49%] mb-6">
-  <source src="/assets/watson-heirloom/media/assembly/light-rods.mov">
+<video controls class="inline-block w-full md:w-[49%] mb-6" poster="/assets/watson-heirloom/media/videos/light-rods-poster.jpg">
+  <source src="/assets/watson-heirloom/media/videos/light-rods.mp4">
 </video>
 
 <div data-component="MediaCollage" class="mb-6">
-  <img src="/assets/watson-heirloom/media/angles/Side Back.jpeg"/>
-  <img src="/assets/watson-heirloom/media/angles/Side Front.jpeg"/>
+  <img src="/assets/watson-heirloom/media/angles/Side-Back.jpeg"/>
+  <img src="/assets/watson-heirloom/media/angles/Side-Front.jpeg"/>
   <img src="/assets/watson-heirloom/media/angles/Back.jpeg"/>
   <img src="/assets/watson-heirloom/media/angles/Handle.jpeg"/>
-  <img src="/assets/watson-heirloom/media/angles/In-hand Left.jpeg"/>
-  <img src="/assets/watson-heirloom/media/angles/In-hand Right.jpeg"/>
+  <img src="/assets/watson-heirloom/media/angles/In-hand-Left.jpeg"/>
+  <img src="/assets/watson-heirloom/media/angles/In-hand-Right.jpeg"/>
   <img src="/assets/watson-heirloom/media/angles/In-hand.jpeg"/>
   <img src="/assets/watson-heirloom/media/angles/Left.jpeg"/>
   <img src="/assets/watson-heirloom/media/angles/Right.jpeg"/>
@@ -53,15 +51,15 @@ Wattson is a character from the video game [Apex Legends](https://www.ea.com/gam
   <img src="/assets/watson-heirloom/media/screens/Menu.jpeg" />
   <img src="/assets/watson-heirloom/media/screens/Radar.jpeg" />
   <img src="/assets/watson-heirloom/media/screens/Lights.jpeg" />
-  <img src="/assets/watson-heirloom/media/screens/Lights > Mode.jpeg" />
-  <img src="/assets/watson-heirloom/media/screens/Lights > Brightness.jpeg" />
-  <img src="/assets/watson-heirloom/media/screens/Lights > Speed.jpeg" />
-  <img src="/assets/watson-heirloom/media/screens/Lights > Direction.jpeg" />
+  <img src="/assets/watson-heirloom/media/screens/Lights-Mode.jpeg" />
+  <img src="/assets/watson-heirloom/media/screens/Lights-Brightness.jpeg" />
+  <img src="/assets/watson-heirloom/media/screens/Lights-Speed.jpeg" />
+  <img src="/assets/watson-heirloom/media/screens/Lights-Direction.jpeg" />
   <img src="/assets/watson-heirloom/media/screens/Settings.jpeg" />
-  <img src="/assets/watson-heirloom/media/screens/Settings > Theme Color.jpeg" />
-  <img src="/assets/watson-heirloom/media/screens/Settings > Overrid Plug.jpeg" />
-  <img src="/assets/watson-heirloom/media/screens/Settings > Override Trigger.jpeg" />
-  <img src="/assets/watson-heirloom/media/screens/Settings > Reset.jpeg" />
+  <img src="/assets/watson-heirloom/media/screens/Settings-Theme-Color.jpeg" />
+  <img src="/assets/watson-heirloom/media/screens/Settings-Overrid-Plug.jpeg" />
+  <img src="/assets/watson-heirloom/media/screens/Settings-Override-Trigger.jpeg" />
+  <img src="/assets/watson-heirloom/media/screens/Settings-Reset.jpeg" />
   <img src="/assets/watson-heirloom/stickers/eye-of-the-storm.png" />
   <img src="/assets/watson-heirloom/stickers/nessi.png" />
   <img src="/assets/watson-heirloom/stickers/nikola-face.png" />

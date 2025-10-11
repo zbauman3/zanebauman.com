@@ -5,9 +5,10 @@ active: true
 slug: worker-mouse
 tags: arduino, avr, atmel, microchip, vusb, usb
 date: 02/02/2024
+image: /assets/worker-mouse/assembled.jpeg
 -->
 
-<img src="/assets/worker-mouse/assembled.jpeg" class="w-full mb-6" />
+## About
 
 This project uses [V-USB](https://www.obdev.at/products/vusb/index.html), for a firmware-only USB driver. This USB device is also registered - via [pid.codes](https://pid.codes/) - [VID 1209, PID F480](https://pid.codes/1209/F480/).
 
@@ -20,6 +21,7 @@ This project uses [V-USB](https://www.obdev.at/products/vusb/index.html), for a 
   <img src="/assets/worker-mouse/board-side.jpeg"/>
   <img src="/assets/worker-mouse/case-top.jpeg"/>
   <img src="/assets/worker-mouse/case-bottom.jpeg"/>
+  <img src="/assets/worker-mouse/schema.png" />
 </div>
 
 ## Parts List
@@ -41,11 +43,4 @@ I used PETG for the case, and separate colors for the lettering / case. This was
 
 If you'd rather not use two colors, you can simply omit the letter models and the letters will be debossed.
 
-### Downloads
-
-- [Zip file with all models](/assets/worker-mouse/models/all.zip)
-- [The Github directory containing the models](https://github.com/zbauman3/WorkerMouse/tree/main/docs/assets/models)
-
-## Schematics
-
-<img src="/assets/worker-mouse/schema.png" class="img-full" />
+- [Zip file with all models](/assets/worker-mouse/3d-model.zip)

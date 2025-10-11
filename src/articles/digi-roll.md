@@ -8,8 +8,6 @@ date: 12/15/2024
 image: /assets/digi-roll/media/assembled/main-image.jpeg
 -->
 
-<img src="/assets/digi-roll/media/assembled/main-image.jpeg" class="mb-6 w-full" />
-
 ## Hardware
 
 > See the [Parts List](#parts-list) for specifics and URLs for the exact parts.
@@ -51,8 +49,8 @@ The final program occupies 6,994 bytes of flash and uses 269 bytes of RAM.
 
 ## Media
 
-<video controls class="mb-6 w-full">
-  <source src="/assets/digi-roll/media/assembled/usage-demo-1.MOV">
+<video controls class="mb-6 w-full" poster="/assets/digi-roll/media/videos/usage-demo-poster.jpg">
+  <source src="/assets/digi-roll/media/videos/usage-demo.mp4">
 </video>
 
 <div data-component="MediaCollage" class="mb-6">
@@ -79,8 +77,8 @@ The final program occupies 6,994 bytes of flash and uses 269 bytes of RAM.
 
 To select a die, press the button for that die. While you are choosing a die, its light will flash to indicate it is selected. Once selected, spin the large D20 spinner to roll. The light for the selected die remains lit when your result is displayed.
 
-<video class="w-full mb-6" controls>
-  <source src="/assets/digi-roll/media/usage/single.mov">
+<video class="w-full mb-6" controls poster="/assets/digi-roll/media/videos/single-poster.jpg">
+  <source src="/assets/digi-roll/media/videos/single.mp4">
 </video>
 
 ### Selecting Multiple Dice
@@ -89,8 +87,8 @@ If you’d like to roll multiple dice of the same type (up to nine, such as `9d2
 
 After rolling multiple dice, the currently selected die’s light will stay illuminated. Press the die’s button to cycle through the individual results. To see the total of all the dice rolled, keep pressing the button until the `=` sign appears. The number shown at that point is the sum of your rolls.
 
-<video class="w-full mb-6" controls>
-  <source src="/assets/digi-roll/media/usage/multiple.mov">
+<video class="w-full mb-6" controls poster="/assets/digi-roll/media/videos/multiple-poster.jpg">
+  <source src="/assets/digi-roll/media/videos/multiple.mp4">
 </video>
 
 ## Parts List
