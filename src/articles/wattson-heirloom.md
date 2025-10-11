@@ -1,11 +1,11 @@
 <!--
-title: Watson Heirloom
-description: A project to build a 3D-printed "Telemetry Receiver Module" for the Apex Legends character "Watson".
+title: Wattson Heirloom
+description: A project to build a 3D-printed "Telemetry Receiver Module" for the Apex Legends character "Wattson".
 active: true
-slug: watson-heirloom
+slug: wattson-heirloom
 tags: arduino, esp32, esp32-s2, Espressif, 3D-printing, graphics, highlight
 date: 03/15/2024
-image: /assets/watson-heirloom/media/cover.jpeg
+image: /assets/wattson-heirloom/media/cover.jpeg
 -->
 
 <img src="/assets/watson-heirloom/media/cover.jpeg" class="w-full mb-6" />
