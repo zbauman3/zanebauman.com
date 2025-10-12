@@ -5,6 +5,7 @@ active: true
 slug: worker-mouse
 tags: avr, atmel, microchip, vusb, usb
 date: 02/02/2024
+lastModified: 10/12/2025
 image: /assets/worker-mouse/board-top.jpeg
 -->
 

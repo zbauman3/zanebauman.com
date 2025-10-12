@@ -7,7 +7,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const articleUrls = articles.map<MetadataRoute.Sitemap[number]>(
     (article) => ({
       url: `https://www.zanebauman.com/articles/${article.slug}`,
-      lastModified: article.date,
+      lastModified: article.lastModified ?? article.date,
       changeFrequency: "monthly",
       priority: 0.7,
     })

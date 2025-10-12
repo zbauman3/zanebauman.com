@@ -172,6 +172,10 @@ class ArticlesCache {
       .find((line) => line.startsWith("date:"))
       ?.replace("date:", "")
       .trim();
+    const lastModified = metadataLines
+      .find((line) => line.startsWith("lastModified:"))
+      ?.replace("lastModified:", "")
+      .trim();
     const image = metadataLines
       .find((line) => line.startsWith("image:"))
       ?.replace("image:", "")
@@ -184,6 +188,7 @@ class ArticlesCache {
       description,
       tags,
       date,
+      lastModified,
       content: content.replace(/<!--[\s\S]*?-->/g, "").trim(),
       image,
     });
@@ -229,6 +234,13 @@ class ArticlesCache {
         message: "Invalid date format",
       })
       .transform((date) => new Date(date)),
+    lastModified: z
+      .string()
+      .refine((date) => !Number.isNaN(Date.parse(date)), {
+        message: "Invalid date format",
+      })
+      .transform((date) => new Date(date))
+      .optional(),
     content: z.string(),
   });
 }
