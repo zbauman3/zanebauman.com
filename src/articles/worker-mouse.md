@@ -8,8 +8,6 @@ date: 02/02/2024
 image: /assets/worker-mouse/board-top.jpeg
 -->
 
-<img src="/assets/worker-mouse/board-top.jpeg" class="w-full mb-6" />
-
 This project uses [V-USB](https://www.obdev.at/products/vusb/index.html), for a firmware-only USB driver. This USB device is also registered - via [pid.codes](https://pid.codes/) - [VID 1209, PID F480](https://pid.codes/1209/F480/).
 
 ## Media

@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import Markdown from "react-markdown";
 import rehypeRaw from "rehype-raw";
 import rehypeSlug from "rehype-slug";
-import rehypeToc from "@jsdevtools/rehype-toc";
+import rehypeToc, { Options } from "@jsdevtools/rehype-toc";
 import rehypeAutolinkHeadings from "rehype-autolink-headings";
 import remarkGfm from "remark-gfm";
 
@@ -57,10 +57,7 @@ export const generateMetadata = async ({ params }: Props) => {
   }
 };
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const customizeTOC = (toc: any) => {
-  // console.log(JSON.stringify(toc, null, 2));
-  // Customize the TOC as needed
+const customizeTOC: Options["customizeTOC"] = (toc) => {
   return {
     type: "element",
     tagName: "div",
@@ -94,6 +91,12 @@ const Page = async ({ params }: Props) => {
         <ArticleDetails TitleComponent="h1" article={article} disableLink />
         <div className="h-7" />
         <div className="markdown">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={article.image}
+            alt={article.title}
+            className="w-full mb-6"
+          />
           <Markdown
             components={markdownComponents}
             rehypePlugins={[

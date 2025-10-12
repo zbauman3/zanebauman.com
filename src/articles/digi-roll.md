@@ -8,8 +8,6 @@ date: 12/15/2024
 image: /assets/digi-roll/media/assembled/main-image.jpeg
 -->
 
-<img src="/assets/digi-roll/media/assembled/main-image.jpeg" class="w-full mb-6" />
-
 ## Hardware
 
 > See the [Parts List](#parts-list) for specifics and URLs for the exact parts.
@@ -51,26 +49,26 @@ The final program occupies 6,994 bytes of flash and uses 269 bytes of RAM.
 
 ## Media
 
-<video controls class="mb-6 w-full" poster="/assets/digi-roll/media/videos/usage-demo-poster.jpg">
+<video controls class="mb-6 w-full" poster="/assets/digi-roll/media/videos/usage-demo-poster.jpg" alt="Usage demo">
   <source src="/assets/digi-roll/media/videos/usage-demo.mp4">
 </video>
 
 <div data-component="MediaCollage" class="mb-6">
-  <img src="/assets/digi-roll/media/assembled/front.jpeg" />
-  <img src="/assets/digi-roll/media/assembled/front-side.jpeg"/>
-  <img src="/assets/digi-roll/media/assembled/front-side-2.jpeg" />
-  <img src="/assets/digi-roll/media/assembled/back-side.jpeg" />
-  <img src="/assets/digi-roll/media/assembled/front-on.jpeg" />
-  <img src="/assets/digi-roll/media/assembled/back.jpeg" alt="Uses 2x AA batteries" />
-  <img src="/assets/digi-roll/media/assembled/front-open.jpeg" />
-  <img src="/assets/digi-roll/media/assembled/back-open.jpeg" alt="The battery pack is attached with a long cord to allow the back to slide off" />
-  <img src="/assets/digi-roll/media/wip/assembled-pcb-front.jpeg" />
-  <img src="/assets/digi-roll/media/wip/assembled-pcb-back.jpeg" />
-  <img src="/assets/digi-roll/media/assembled/spinner.jpeg" />
-  <img src="/assets/digi-roll/media/wip/prototype.jpeg" />
-  <img src="/assets/digi-roll/media/wip/prototype-pcb.jpeg" />
-  <img src="/assets/digi-roll/KiCad/schema.png" />
-  <img src="/assets/digi-roll/KiCad/pcb.png" />
+  <img src="/assets/digi-roll/media/assembled/front.jpeg" alt="Front view" />
+  <img src="/assets/digi-roll/media/assembled/front-side.jpeg" alt="Front side left view"/>
+  <img src="/assets/digi-roll/media/assembled/front-side-2.jpeg" alt="Front side right view" />
+  <img src="/assets/digi-roll/media/assembled/back-side.jpeg" alt="Back left side view" />
+  <img src="/assets/digi-roll/media/assembled/front-on.jpeg" alt="Front view active" />
+  <img src="/assets/digi-roll/media/assembled/back.jpeg" alt="Uses 2x AA batteries" alt="" />
+  <img src="/assets/digi-roll/media/assembled/front-open.jpeg" alt="The battery pack is attached with a long cord to allow the back to slide off" />
+  <img src="/assets/digi-roll/media/assembled/back-open.jpeg" alt="The ISP headers are on the back for easy access" />
+  <img src="/assets/digi-roll/media/wip/assembled-pcb-front.jpeg" alt="Assembled PCB front view" />
+  <img src="/assets/digi-roll/media/wip/assembled-pcb-back.jpeg" alt="Assembled PCB back view" />
+  <img src="/assets/digi-roll/media/assembled/spinner.jpeg" alt="A magnet is mounted to the spinning dice. Then a Hall effect sensor is placed above it to sense the rotation." />
+  <img src="/assets/digi-roll/media/wip/prototype.jpeg" alt="This is the prototype/development board. The project stayed in this state for about 7 months during software and case development." />
+  <img src="/assets/digi-roll/media/wip/prototype-pcb.jpeg" alt="The prototype board compared to the finished PCB" />
+  <img src="/assets/digi-roll/KiCad/schema.png" alt="The KiCad schematic" />
+  <img src="/assets/digi-roll/KiCad/pcb.png" alt="The KiCad PCB" />
 </div>
 
 ## Usage
@@ -79,7 +77,7 @@ The final program occupies 6,994 bytes of flash and uses 269 bytes of RAM.
 
 To select a die, press the button for that die. While you are choosing a die, its light will flash to indicate it is selected. Once selected, spin the large D20 spinner to roll. The light for the selected die remains lit when your result is displayed.
 
-<video class="w-full mb-6" controls poster="/assets/digi-roll/media/videos/single-poster.jpg">
+<video class="w-full mb-6" controls poster="/assets/digi-roll/media/videos/single-poster.jpg" alt="Demonstrating a single role">
   <source src="/assets/digi-roll/media/videos/single.mp4">
 </video>
 
@@ -89,7 +87,7 @@ If you’d like to roll multiple dice of the same type (up to nine, such as `9d2
 
 After rolling multiple dice, the currently selected die’s light will stay illuminated. Press the die’s button to cycle through the individual results. To see the total of all the dice rolled, keep pressing the button until the `=` sign appears. The number shown at that point is the sum of your rolls.
 
-<video class="w-full mb-6" controls poster="/assets/digi-roll/media/videos/multiple-poster.jpg">
+<video class="w-full mb-6" controls poster="/assets/digi-roll/media/videos/multiple-poster.jpg" alt="Demonstrating a multi-role">
   <source src="/assets/digi-roll/media/videos/multiple.mp4">
 </video>
 
