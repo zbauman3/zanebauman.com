@@ -27,6 +27,8 @@ The light rods are made up of NeoPixels, with each strip wired in parallel. That
 
 ### Software
 
+> The software is open source and available at [github.com/zbauman3/wattson-heirloom](https://github.com/zbauman3/wattson-heirloom).
+
 When I started the project, I wasn’t very familiar with RTOS and didn’t want to over complicate things — especially since I was on a deadline for my nephew’s birthday. So I stuck with [PlatformIO](https://platformio.org/), the Arduino framework, and used a lightweight coroutine library ([AceRoutine](https://github.com/bxparks/AceRoutine)) for cooperative multitasking. It turned out to be a great learning experience. I had to think carefully about how long each coroutine ran before yielding, because if one coroutine hogged the CPU, the rest would starve. It forced me to write efficient, predictable code.
 
 I wasn’t sure what architecture to use at first, but since I knew I’d be building a UI, I modeled it loosely after an MVC pattern. The inputs (joystick, trigger, buttons, and encoder) act as controllers. The overall system state is the model. And everything that outputs feedback (the LCD, LEDs, and vibration) are the views. It’s a structure that felt natural coming from web development, and it made adding new features much easier later on.

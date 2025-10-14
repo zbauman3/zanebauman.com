@@ -21,6 +21,8 @@ The V-USB site is also a treasure trove of information for building simple USB d
 
 ### Software
 
+> The software is open source and available at [github.com/zbauman3/WorkerMouse](https://github.com/zbauman3/WorkerMouse).
+
 With the hardware design and USB driver settled, all I needed to do was write some software to periodically move the mouse. I chose to write it using [the AVR Toolchain (v3.7.0)](https://www.microchip.com/en-us/tools-resources/develop/microchip-studio/gcc-compilers), which relies on the excellent [avr-libc (v2.0.0)](https://github.com/avrdudes/avr-libc). I took this approach as an exploration into using the toolchain developed by the hardware manufacturer, rather than a third-party abstraction like Arduino.
 
 I wanted the mouse movements to feel somewhat realistic — mostly just for fun. This meant the only software I needed to write was a timer to periodically move the mouse, use a pseudo-random number generator to pick movement amounts and speeds, and a USB report generator. Altogether, that’s less than 200 lines of code (not including the USB device configuration such as name, VID/PID, etc).

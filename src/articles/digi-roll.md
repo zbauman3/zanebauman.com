@@ -5,12 +5,11 @@ active: true
 slug: digi-roll
 tags: arduino, avr, atmel, microchip, dnd, dungeons-and-dragons, pcb, highlight
 date: 12/15/2024
+lastModified: 10/14/2025
 image: /assets/digi-roll/media/assembled/main-image.jpeg
 -->
 
 ## Hardware
-
-> See the [Parts List](#parts-list) for specifics and URLs for the exact parts.
 
 For this project, I had a few hardware goals in mind. I wanted to design and order the printed circuit board (PCB) myself, I wanted to do much of the electrical engineering myself, and I wanted the end circuit to be very power efficient.
 
@@ -35,7 +34,7 @@ By combining these hardware choices with low-current LEDs and efficient software
 
 ## Software
 
-> See the Github repo for specifics [zbauman3/digi-roll](https://github.com/zbauman3/digi-roll).
+> The software is open source and available at [github.com/zbauman3/digi-roll](https://github.com/zbauman3/digi-roll).
 
 Initially, I wanted to develop the software for this project using the bare-bones [avr-libc](https://github.com/avrdudes/avr-libc). However, since I was using a breakout board for the 7-segment display, this would have required me to write a custom library for I2C communication with the HT16K33 driver. While this was possible, it would have taken more time than I wanted to invest. Instead, I decided to use the Arduino framework for this project.
 
@@ -93,15 +92,6 @@ After rolling multiple dice, the currently selected die’s light will stay illu
 
 ## Parts List
 
-### 3D Printed Case
-
-| Filament                       | Parts                                   | Link                                                                         |
-| ------------------------------ | --------------------------------------- | ---------------------------------------------------------------------------- |
-| Prusament PETG Anthracite Grey | External case                           | [Prusa](https://www.prusa3d.com/product/prusament-petg-anthracite-grey-1kg/) |
-| Prusament PLA Azure Blue       | Buttons, power switch, and dice spinner | [Prusa](https://www.prusa3d.com/product/prusament-pla-azure-blue-1kg/)       |
-
-<br />
-
 ### Electronics
 
 | Part                       | Description                      | Count | Link                                                               |
@@ -122,6 +112,15 @@ After rolling multiple dice, the currently selected die’s light will stay illu
 
 <br />
 
+### 3D Printed Case
+
+| Filament                       | Parts                                   | Link                                                                         |
+| ------------------------------ | --------------------------------------- | ---------------------------------------------------------------------------- |
+| Prusament PETG Anthracite Grey | External case                           | [Prusa](https://www.prusa3d.com/product/prusament-petg-anthracite-grey-1kg/) |
+| Prusament PLA Azure Blue       | Buttons, power switch, and dice spinner | [Prusa](https://www.prusa3d.com/product/prusament-pla-azure-blue-1kg/)       |
+
+<br />
+
 ### Misc
 
 | Part               | Description                                                           | Count | Link                                                   |
@@ -134,3 +133,19 @@ After rolling multiple dice, the currently selected die’s light will stay illu
 | Hot glue           | Securing the display and the magnet holer                             | -     | N/A                                                    |
 | Tacking screws     | Attaching the battery holder to the case                              | 2     | N/A                                                    |
 | Header pins        | Attaching the breakout boards and a ISP connection for programming    | 14    | N/A                                                    |
+
+<br />
+
+## Downloads
+
+### 3D Models
+
+- [complete-digi-roll.step](/assets/digi-roll/models/complete-digi-roll.step)
+
+### Schematics
+
+The schematic and PCB were designed with KiCad.
+
+- The schematics: [digi-roll.kicad_sch](public/assets/digi-roll/KiCad/digi-roll.kicad_sch)
+- The PCB: [digi-roll.kicad_pcb](public/assets/digi-roll/KiCad/digi-roll.kicad_pcb)
+- The Gerber file: [digi-roll-grb-drl.zip](public/assets/digi-roll/KiCad/digi-roll-grb-drl.zip)
