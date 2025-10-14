@@ -85,6 +85,7 @@
     ul,
     ol {
       @apply pb-6;
+      padding-inline-start: 1.25rem;
 
       ul,
       ol {
@@ -94,13 +95,13 @@
 
     ul {
       li {
-        @apply list-disc list-inside;
+        @apply list-disc;
       }
     }
 
     ol {
       li {
-        @apply list-decimal list-inside;
+        @apply list-decimal;
       }
     }
 
@@ -123,6 +124,10 @@
           @apply list-none;
         }
       }
+    }
+
+    .toc-wrapper > ol {
+      padding-inline-start: 0px;
     }
   }
 }
