@@ -5,15 +5,17 @@ active: true
 slug: worker-mouse
 tags: avr, atmel, microchip, vusb, usb
 date: 02/02/2024
-lastModified: 10/12/2025
+lastModified: 10/14/2025
 image: /assets/worker-mouse/board-top.jpeg
 -->
 
 ## About
 
+The WorkerMouse was a project I did as an exercise in learning about USB and HID devices. It is a [Mouse Jiggler](https://en.wikipedia.org/wiki/Mouse_jiggler) that pretends to be a legitimate USB device.
+
 ### Hardware
 
-The WorkerMouse was a project I did as an exercise in learning about USB and HID devices. I began with an ESP32-S2 but quickly realized it was overkill for creating a simple mouse. I’m very familiar with the ATtiny85, but it doesn’t have a hardware USB peripheral. Luckily, I was able to stand on the shoulders of giants — the [V-USB](https://www.obdev.at/products/vusb/index.html) project was built to run on AVR MCUs. This software-only USB implementation allows the ATtiny85 to act as a low-speed USB 1.1 device, which is perfectly adequate for a HID mouse.
+I began with an ESP32-S2 but quickly realized it was overkill for creating a simple mouse. I’m very familiar with the ATtiny85, but it doesn’t have a hardware USB peripheral. Luckily, I was able to stand on the shoulders of giants — the [V-USB](https://www.obdev.at/products/vusb/index.html) project was built to run on AVR MCUs. This software-only USB implementation allows the ATtiny85 to act as a low-speed USB 1.1 device, which is perfectly adequate for a HID mouse.
 
 The V-USB site is also a treasure trove of information for building simple USB devices. It includes dozens of reference projects with both hardware and software documentation. The [HIDKeys](https://www.obdev.at/products/vusb/hidkeys.html) example was a perfect reference for the hardware side of this project, especially when combined with the `Hardware` section of their overview page.
 
