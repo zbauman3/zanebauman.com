@@ -9,7 +9,13 @@ lastModified: 10/14/2025
 image: /assets/digi-roll/media/assembled/main-image.jpeg
 -->
 
-## Hardware
+## About
+
+Dungeons and Dragons is one of my favorite pastimes. I love using physical dice, but that can get pretty complicated when working with a large roll. I also love using digital solutions like DnD Beyond, but it can be really distracting to have your phone or computer active while playing.
+
+I had an idea for a device that met in the middle of physical and digital, and thus the DigiRoll was born. It allows you to roll up to 9 of each die, and shows you their individual results along with the sum.
+
+### Hardware
 
 For this project, I had a few hardware goals in mind. I wanted to design and order the printed circuit board (PCB) myself, I wanted to do much of the electrical engineering myself, and I wanted the end circuit to be very power efficient.
 
@@ -32,7 +38,7 @@ By combining these hardware choices with low-current LEDs and efficient software
   <img src="/assets/digi-roll/media/power/sleep-large.png" alt="Current consumption during sleep mode" />
 </div>
 
-## Software
+### Software
 
 > The software is open source and available at [github.com/zbauman3/digi-roll](https://github.com/zbauman3/digi-roll).
 
