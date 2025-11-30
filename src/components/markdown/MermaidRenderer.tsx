@@ -1,10 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import mermaid from "mermaid";
+import elkLayouts from "@mermaid-js/layout-elk";
 
 export const MermaidRenderer = ({ children }: { children: unknown }) => {
   const [element, setElement] = useState<null | HTMLDivElement>(null);
+  const hasLoadedElkRef = useRef(false);
 
   useEffect(() => {
     if (!element) {
@@ -15,7 +17,7 @@ export const MermaidRenderer = ({ children }: { children: unknown }) => {
       element.innerHTML = `<pre style="color: red;">Error rendering Mermaid diagram: ${type}</pre>`;
     };
 
-    // code > string
+    // validate the children to find the `code > string` structure
     if (
       typeof children !== "object" ||
       children === null ||
@@ -33,19 +35,41 @@ export const MermaidRenderer = ({ children }: { children: unknown }) => {
       return;
     }
 
-    const uuid = crypto
-      .randomUUID()
-      .replace(/[^a-zA-Z0-9]/g, "")
-      .toLowerCase()
-      .replace(/^(\d)/, "a$1");
     const childrenString = children.props.children;
 
     (async () => {
       try {
+        // needs an ID, so we generate a random one
+        const uuid = crypto
+          .randomUUID()
+          .replace(/[^a-zA-Z0-9]/g, "")
+          .toLowerCase()
+          .replace(/^(\d)/, "a$1");
+
+        if (!hasLoadedElkRef.current) {
+          // Fix a bug with mermaid block diagrams in react. ☹️
+          // https://github.com/facebook/react/issues/24360
+          // https://github.com/mermaid-js/mermaid/issues/5530
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (HTMLElement.prototype as any).toJSON = () => "";
+          mermaid.registerLayoutLoaders([...elkLayouts]);
+          hasLoadedElkRef.current = true;
+        }
+
+        // if there's no config, add a default one
+        const { config } = await mermaid.parse(childrenString);
+        let stringWithConfig = childrenString;
+        if (Object.keys(config).length === 0) {
+          stringWithConfig =
+            `---\nconfig:\n  theme: dark\n  layout: elk\n---\n` +
+            childrenString;
+        }
+
         const { svg, bindFunctions } = await mermaid.render(
           uuid,
-          childrenString
+          stringWithConfig
         );
+
         element.innerHTML = svg;
         bindFunctions?.(element);
       } catch (error) {

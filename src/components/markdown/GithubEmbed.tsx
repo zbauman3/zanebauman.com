@@ -147,7 +147,7 @@ export const GithubEmbed = async (props: Record<string, unknown>) => {
         href={originalUrl.toString()}
         target="_blank"
         rel="noopener"
-        className="block mb-2 text-sm text-blue-600 dark:text-blue-400 hover:underline break-words"
+        className="inline-block mb-2 text-sm text-blue-600 dark:text-blue-400 hover:underline break-words"
         title="View on GitHub"
       >
         🔗 GitHub &mdash; {github.owner}/{github.repo} &mdash; {github.path}
