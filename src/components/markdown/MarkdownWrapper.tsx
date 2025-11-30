@@ -4,6 +4,7 @@ import type { ClassAttributes, HTMLAttributes } from "react";
 import type { ExtraProps } from "react-markdown";
 
 import { MediaCollage } from "./MediaCollage";
+import { GithubEmbed } from "./GithubEmbed";
 
 // too crazy to infer from react-markdown types. Hard-coding for now.
 type MarkdownWrapperProps = ClassAttributes<HTMLElement> &
@@ -23,6 +24,13 @@ const customComponents: {
       return customComponentName === "MediaCollage" && node.tagName === "div";
     },
     component: MediaCollage,
+  },
+  {
+    matcher: (node) => {
+      const customComponentName = node.properties["dataComponent"];
+      return customComponentName === "GithubEmbed" && node.tagName === "div";
+    },
+    component: GithubEmbed,
   },
 ];
 
