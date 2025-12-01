@@ -14,7 +14,7 @@ export const MermaidRenderer = ({ children }: { children: unknown }) => {
     }
 
     const showChildError = (type: string) => {
-      element.innerHTML = `<pre style="color: red;">Error rendering Mermaid diagram: ${type}</pre>`;
+      element.innerHTML = `<span style="color: red;">Error rendering Mermaid diagram: ${type}</span>`;
     };
 
     // validate the children to find the `code > string` structure
@@ -83,6 +83,8 @@ export const MermaidRenderer = ({ children }: { children: unknown }) => {
     <div
       ref={setElement}
       className="flex justify-center p-1 bg-stone-50 dark:bg-stone-900 rounded-md"
-    />
+    >
+      Loading Mermaid diagram...
+    </div>
   );
 };
