@@ -45,6 +45,8 @@ This article, however, has been significantly reviewed and edited by an LLM. I'v
 
 ## Software
 
+> The software is open source and available at [github.com/zbauman3/illumindex](https://github.com/zbauman3/illumindex).
+
 This project was built entirely from scratch, using Espressif's [ESP-IDF](https://docs.espressif.com/projects/esp-idf/en/v5.3.1/esp32s3) through their wonderful [ESP-IDF Extension for VSCode](https://docs.espressif.com/projects/vscode-esp-idf-extension/).
 
 ```mermaid
@@ -85,6 +87,16 @@ flowchart TD
 ```
 
 <br />
+
+### Driver
+
+- Dedicated GPIO
+  - https://docs.espressif.com/projects/esp-idf/en/stable/esp32s2/api-reference/peripherals/dedic_gpio.html#manipulate-gpios-by-writing-assembly-code
+
+### Fonts
+
+- Bitmap Fonts: http://www.piclist.com/tecHREF/datafile/charset/extractor/charset_extractor.htm
+  - https://bitmap-code-generator.benalman.com/
 
 <div data-component="GithubEmbed" data-url="https://github.com/zbauman3/illumindex/blob/main/server/src/components/Bitmap.tsx#L1-L2"></div>
 
@@ -135,3 +147,5 @@ The body was printed with PETG. If I were to improve this design a little, I wou
 The schematic was designed with KiCad.
 
 - [illumindex.kicad_sch](https://github.com/zbauman3/illumindex/blob/main/hardware/illumindex.kicad_sch)
+
+<img src="/assets/illumindex/schema.png" style="width: 100%; max-width: 400px;" />
