@@ -27,7 +27,11 @@ class ArticlesCache {
         const content = await readFile(filePath, "utf-8");
         const article = ArticlesCache.stringToArticleEntry(content);
 
-        if (!article.active && process.env.NODE_ENV !== "development") {
+        if (
+          !article.active &&
+          process.env.NODE_ENV !== "development" &&
+          process.env.VERCEL_ENV !== "preview"
+        ) {
           continue;
         }
 
