@@ -28,7 +28,7 @@ const configFn = (phase: string) => {
     // Critical dependency: the request of a dependency is an expression
     // ...
     // Error: Cannot find module './prism-xxx
-    serverExternalPackages: ["prismjs"],
+    serverExternalPackages: ["prismjs/components"],
   };
 
   return nextConfig;
