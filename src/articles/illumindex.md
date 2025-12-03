@@ -3,10 +3,10 @@ title: Illumindex
 description: An exploration of display drivers and IoT systems, from scratch.
 active: false
 slug: illumindex
-tags: esp32, esp32-s2, Espressif, 3D-printing, graphics, highlight, Node.js
+tags: esp32, esp32-s2, Espressif, 3D-printing, graphics, highlight, Node.js, iot
 date: 11/29/2025
 lastModified: 11/29/2025
-image: /assets/illumindex/front-display.png
+image: /assets/illumindex/cover.png
 -->
 
 <!--

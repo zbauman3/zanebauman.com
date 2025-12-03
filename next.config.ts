@@ -22,6 +22,12 @@ const configFn = (phase: string) => {
 
   const nextConfig: NextConfig = {
     env: resolvedEnv,
+    // `prismjs` uses dynamic requires, which causes webpack to accidentally tree shake required'
+    // deps with the build error:
+    //
+    // Critical dependency: the request of a dependency is an expression
+    // ...
+    // Error: Cannot find module './prism-xxx
     serverExternalPackages: ["prismjs"],
   };
 

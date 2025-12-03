@@ -1,5 +1,5 @@
 import Prism from "prismjs";
-import loadLanguages from "prismjs/components/";
+import loadLanguages from "prismjs/components/index";
 import "prismjs/themes/prism-tomorrow.min.css";
 
 const parseUrl = ({ url }: { url: string }) => {
