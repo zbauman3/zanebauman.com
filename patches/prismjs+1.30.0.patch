@@ -1,5 +1,5 @@
 diff --git a/node_modules/prismjs/components/index.js b/node_modules/prismjs/components/index.js
-index b2edcc2..1a898e5 100644
+index b2edcc2..2ba451b 100644
 --- a/node_modules/prismjs/components/index.js
 +++ b/node_modules/prismjs/components/index.js
 @@ -1,6 +1,5 @@
@@ -11,7 +11,7 @@ index b2edcc2..1a898e5 100644
  
  /**
   * The set of all languages which have been loaded using the below function.
-@@ -18,34 +17,34 @@ const loadedLanguages = new Set();
+@@ -18,34 +17,45 @@ const loadedLanguages = new Set();
   * @returns {void}
   */
  function loadLanguages(languages) {
@@ -61,7 +61,18 @@ index b2edcc2..1a898e5 100644
 +      return;
 +    }
 +
-+    const pathToLanguage = "prismjs/components/prism-" + lang + ".js";
++    const pathToLanguage = "prism-" + lang;
++
++    console.log("__dirname", typeof __dirname);
++
++    const paths = [`node_modules/prismjs/components/${pathToLanguage}`];
++    for (const testPath of paths) {
++      try {
++        console.log(testPath, ": ", require.resolve(testPath));
++      } catch (e) {
++        console.log("Failed: ", testPath);
++      }
++    }
 +
 +    // remove from require cache and from Prism
 +    delete require.cache[require.resolve(pathToLanguage)];
