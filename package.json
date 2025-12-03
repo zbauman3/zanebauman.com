@@ -7,8 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "types": "tsc --noEmit",
-    "postinstall": "npx patch-package"
+    "types": "tsc --noEmit"
   },
   "dependencies": {
     "@jsdevtools/rehype-toc": "^3.0.2",
@@ -40,7 +39,6 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "15.5.4",
-    "patch-package": "^8.0.1",
     "typescript": "^5"
   }
 }
