@@ -22,6 +22,7 @@ const configFn = (phase: string) => {
 
   const nextConfig: NextConfig = {
     env: resolvedEnv,
+    transpilePackages: ["prismjs"],
   };
 
   return nextConfig;
