@@ -2,6 +2,9 @@ import Prism from "prismjs";
 import loadLanguages from "prismjs/components/";
 import "prismjs/themes/prism-tomorrow.min.css";
 
+// load the language for syntax highlighting
+loadLanguages(["typescript"]);
+
 const parseUrl = ({ url }: { url: string }) => {
   // a pattern to match line numbers in the URL hash, e.g. #L10-L20
   const hashLinesPattern = /#L(\d+)(-L(\d+))?$/;
@@ -100,8 +103,6 @@ const generateHtmlString = ({
   fileType: string;
   startLine?: number | null;
 }) => {
-  // load the language for syntax highlighting
-  loadLanguages([fileType]);
   const htmlString = Prism.highlight(
     content,
     Prism.languages[fileType],
