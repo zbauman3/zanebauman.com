@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "types": "tsc --noEmit",
-    "postinstall": "patch-package"
+    "postinstall": "echo \"Patching packages...\" && npx patch-package"
   },
   "dependencies": {
     "@jsdevtools/rehype-toc": "^3.0.2",
