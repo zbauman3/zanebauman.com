@@ -47,7 +47,11 @@ This article, however, has been significantly reviewed and edited by an LLM. I'v
 
 > The software is open source and available at [github.com/zbauman3/illumindex](https://github.com/zbauman3/illumindex).
 
-This project was built entirely from scratch, using Espressif's [ESP-IDF](https://docs.espressif.com/projects/esp-idf/en/v5.3.1/esp32s3) through their wonderful [ESP-IDF Extension for VSCode](https://docs.espressif.com/projects/vscode-esp-idf-extension/).
+While the firmware was built using Espressif's [ESP-IDF](https://docs.espressif.com/projects/esp-idf/en/v5.3.1/esp32s3) (through their wonderful [ESP-IDF Extension for VSCode](https://docs.espressif.com/projects/vscode-esp-idf-extension/)), there were no other dependencies in this project outside of the standard library that the the ESP-IDF provides. Since this was a learning experience, rather than a project with a deadline, I wanted to make sure that I was involved in writing all of the application logic.
+
+I broke down the individual pieces of the firmware into logical sections, depending on their purpose. The ESP-IDF has a concept for this called [Components](https://docs.espressif.com/projects/esp-idf/en/v5.3.1/esp32s3/api-guides/build-system.html#concepts). These components are: [led_matrix](), [network](), [gfx](), [commands](), [display](), [state](), and [time_util]().
+
+I'll talk about each of these components in detail below.
 
 ```mermaid
 flowchart TD
@@ -88,15 +92,34 @@ flowchart TD
 
 <br />
 
-### Driver
+### led_matrix
 
 - Dedicated GPIO
   - https://docs.espressif.com/projects/esp-idf/en/stable/esp32s2/api-reference/peripherals/dedic_gpio.html#manipulate-gpios-by-writing-assembly-code
+- https://bikerglen.com/projects/lighting/led-panel-1up/
 
-### Fonts
+### network
+
+#### WiFi
+
+#### Fetch
+
+### gfx
+
+#### Display Buffer
+
+#### Fonts
 
 - Bitmap Fonts: http://www.piclist.com/tecHREF/datafile/charset/extractor/charset_extractor.htm
   - https://bitmap-code-generator.benalman.com/
+
+### commands
+
+### display
+
+### state
+
+### time_util
 
 <div data-component="GithubEmbed" data-url="https://github.com/zbauman3/illumindex/blob/main/server/src/components/Bitmap.tsx#L1-L2"></div>
 

@@ -1,6 +1,6 @@
 import Prism from "prismjs";
 import loadLanguages from "prismjs/components/index";
-import { PrismCss } from "./PrismCss";
+import "prismjs/themes/prism-tomorrow.min.css";
 
 const parseUrl = ({ url }: { url: string }) => {
   // a pattern to match line numbers in the URL hash, e.g. #L10-L20
@@ -152,7 +152,6 @@ export const GithubEmbed = async (props: Record<string, unknown>) => {
       >
         🔗 GitHub &mdash; {github.owner}/{github.repo} &mdash; {github.path}
       </a>
-      <PrismCss />
       <pre
         className="w-full overflow-x-auto"
         dangerouslySetInnerHTML={{ __html: htmlString }}
