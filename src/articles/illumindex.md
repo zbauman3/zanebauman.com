@@ -86,13 +86,80 @@ flowchart TD
 
   state --> fetch
 
-  <!-- classDef activeNodes fill:#00F
-  class main activeNodes; -->
+  classDef customBlock fill:#CCCCCC,color:black
+  class main customBlock;
+  class display customBlock;
+  class wifi customBlock;
+  class fetch customBlock;
+  class font customBlock;
+  class display_buffer customBlock;
+  class commands customBlock;
+  class state customBlock;
+  class led_matrix customBlock;
+  class time_util customBlock;
 ```
 
 <br />
 
 ### led_matrix
+
+```mermaid
+flowchart LR
+  matrix@{ shape: rect, label: "\n&nbsp;\n&nbsp;\n&nbsp;\n&nbsp;\n&nbsp;\n&nbsp;\n&nbsp;\n&nbsp;\n&nbsp;\n&nbsp;\n&nbsp;\n&nbsp;\n&nbsp;64x64\nLED\nMatrix\n&nbsp;\n&nbsp;\n&nbsp;\n&nbsp;\n&nbsp;\n&nbsp;\n&nbsp;\n&nbsp;\n&nbsp;\n&nbsp;\n&nbsp;\n&nbsp;" }
+
+  red1@{ shape: text }    o--o matrix
+  blue1@{ shape: text }   o--o matrix
+  red2@{ shape: text }    o--o matrix
+  blue2@{ shape: text }   o--o matrix
+  A0@{ shape: text }      o--o matrix
+  A2@{ shape: text }      o--o matrix
+  Clock@{ shape: text }   o--o matrix
+  Enabled@{ shape: text } o--o matrix
+
+  matrix o--o green1@{ shape: text }
+  matrix o--o gnd1@{ shape: text, label: "GND" }
+  matrix o--o green2@{ shape: text }
+  matrix o--o A4@{ shape: text }
+  matrix o--o A1@{ shape: text }
+  matrix o--o A3@{ shape: text }
+  matrix o--o Latch@{ shape: text }
+  matrix o--o gnd2@{ shape: text, label: "GND" }
+
+  style matrix fill:#CCCCCC,color:black
+
+  style red1 color:red
+  style red2 color:red
+  linkStyle 0 stroke:red
+  linkStyle 2 stroke:red
+
+  style green1 color:green
+  style green2 color:green
+  linkStyle 8 stroke:green
+  linkStyle 10 stroke:green
+
+  style blue1 color:#7777FF
+  style blue2 color:#7777FF
+  linkStyle 1 stroke:#7777FF
+  linkStyle 3 stroke:#7777FF
+
+  style A0 color:#C06000
+  style A1 color:#C06000
+  style A2 color:#C06000
+  style A3 color:#C06000
+  style A4 color:#C06000
+  linkStyle 4 stroke:#D35900
+  linkStyle 5 stroke:#D35900
+  linkStyle 11 stroke:#D35900
+  linkStyle 12 stroke:#D35900
+  linkStyle 13 stroke:#D35900
+
+  style Clock color:#99A000
+  style Enabled color:#99A000
+  style Latch color:#99A000
+  linkStyle 6 stroke:#99A000
+  linkStyle 7 stroke:#99A000
+  linkStyle 14 stroke:#99A000
+```
 
 - Dedicated GPIO
   - https://docs.espressif.com/projects/esp-idf/en/stable/esp32s2/api-reference/peripherals/dedic_gpio.html#manipulate-gpios-by-writing-assembly-code
