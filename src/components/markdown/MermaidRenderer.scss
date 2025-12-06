@@ -1,0 +1,33 @@
+.subgraph {
+  .cluster.invisibleSubgraph {
+    & > rect {
+      display: none !important;
+    }
+    .cluster-label {
+      display: none !important;
+    }
+  }
+}
+
+.node.default {
+  &.squishedText {
+    .text,
+    .label foreignObject {
+      overflow: visible;
+      padding: 0;
+      margin: 0;
+      height: 1;
+      line-height: 1px;
+    }
+  }
+
+  .basic.label-container,
+  .basic.label-container path {
+    fill: #cccccc !important;
+    stroke: #cccccc !important;
+  }
+
+  .label .nodeLabel {
+    color: black !important;
+  }
+}

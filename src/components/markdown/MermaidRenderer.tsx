@@ -4,6 +4,8 @@ import { useState, useEffect, useRef } from "react";
 import mermaid from "mermaid";
 import elkLayouts from "@mermaid-js/layout-elk";
 
+import "./MermaidRenderer.scss";
+
 export const MermaidRenderer = ({ children }: { children: unknown }) => {
   const [element, setElement] = useState<null | HTMLDivElement>(null);
   const hasLoadedElkRef = useRef(false);

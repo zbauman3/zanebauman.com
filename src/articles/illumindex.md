@@ -85,18 +85,6 @@ flowchart TD
   commands --> display_buffer
 
   state --> fetch
-
-  classDef customBlock fill:#CCCCCC,color:black
-  class main customBlock;
-  class display customBlock;
-  class wifi customBlock;
-  class fetch customBlock;
-  class font customBlock;
-  class display_buffer customBlock;
-  class commands customBlock;
-  class state customBlock;
-  class led_matrix customBlock;
-  class time_util customBlock;
 ```
 
 <br />
@@ -105,60 +93,84 @@ flowchart TD
 
 ```mermaid
 flowchart LR
-  matrix@{ shape: rect, label: "\n&nbsp;\n&nbsp;\n&nbsp;\n&nbsp;\n&nbsp;\n&nbsp;\n&nbsp;\n&nbsp;\n&nbsp;\n&nbsp;\n&nbsp;\n&nbsp;\n&nbsp;64x64\nLED\nMatrix\n&nbsp;\n&nbsp;\n&nbsp;\n&nbsp;\n&nbsp;\n&nbsp;\n&nbsp;\n&nbsp;\n&nbsp;\n&nbsp;\n&nbsp;\n&nbsp;" }
+  matrix@{ shape: rounded, label: "\n&nbsp;\n&nbsp;\n&nbsp;\n&nbsp;\n&nbsp;\n&nbsp;\n&nbsp;64x64\nLED\nMatrix\n&nbsp;\n&nbsp;\n&nbsp;\n&nbsp;\n&nbsp;\n&nbsp;\n&nbsp;" }
 
-  red1@{ shape: text }    o--o matrix
-  blue1@{ shape: text }   o--o matrix
-  red2@{ shape: text }    o--o matrix
-  blue2@{ shape: text }   o--o matrix
-  A0@{ shape: text }      o--o matrix
-  A2@{ shape: text }      o--o matrix
-  Clock@{ shape: text }   o--o matrix
-  Enabled@{ shape: text } o--o matrix
+  gnd1@{ shape: text, label: "GND" }
+  gnd2@{ shape: text, label: "GND" }
 
-  matrix o--o green1@{ shape: text }
-  matrix o--o gnd1@{ shape: text, label: "GND" }
-  matrix o--o green2@{ shape: text }
-  matrix o--o A4@{ shape: text }
-  matrix o--o A1@{ shape: text }
-  matrix o--o A3@{ shape: text }
-  matrix o--o Latch@{ shape: text }
-  matrix o--o gnd2@{ shape: text, label: "GND" }
+  red1@{ shape: text }
+  green1@{ shape: text }
+  blue1@{ shape: text }
 
-  style matrix fill:#CCCCCC,color:black
+  red2@{ shape: text }
+  green2@{ shape: text }
+  blue2@{ shape: text }
 
-  style red1 color:red
-  style red2 color:red
-  linkStyle 0 stroke:red
-  linkStyle 2 stroke:red
+  A4@{ shape: text }
+  A0@{ shape: text }
+  A1@{ shape: text }
+  A2@{ shape: text }
+  A3@{ shape: text }
 
-  style green1 color:green
-  style green2 color:green
-  linkStyle 8 stroke:green
-  linkStyle 10 stroke:green
+  Clock@{ shape: text }
+  Latch@{ shape: text }
+  Enabled@{ shape: text }
 
-  style blue1 color:#7777FF
-  style blue2 color:#7777FF
-  linkStyle 1 stroke:#7777FF
-  linkStyle 3 stroke:#7777FF
+  red1 --- matrix
+  blue1 --- matrix
+  red2 --- matrix
+  blue2 --- matrix
+  A0 --- matrix
+  A2 --- matrix
+  Clock --- matrix
+  Enabled --- matrix
 
-  style A0 color:#C06000
-  style A1 color:#C06000
-  style A2 color:#C06000
-  style A3 color:#C06000
-  style A4 color:#C06000
-  linkStyle 4 stroke:#D35900
-  linkStyle 5 stroke:#D35900
-  linkStyle 11 stroke:#D35900
-  linkStyle 12 stroke:#D35900
-  linkStyle 13 stroke:#D35900
+  matrix --- green1
+  matrix --- gnd1
+  matrix --- green2
+  matrix --- A4
+  matrix --- A1
+  matrix --- A3
+  matrix --- Latch
+  matrix --- gnd2
 
-  style Clock color:#99A000
-  style Enabled color:#99A000
-  style Latch color:#99A000
-  linkStyle 6 stroke:#99A000
-  linkStyle 7 stroke:#99A000
-  linkStyle 14 stroke:#99A000
+  class red1 squishedText
+  style red1 color:red,font-weight:bold
+  class red2 squishedText
+  style red2 color:red,font-weight:bold
+
+  class green1 squishedText
+  style green1 color:green,font-weight:bold
+  class green2 squishedText
+  style green2 color:green,font-weight:bold
+
+  class blue1 squishedText
+  style blue1 color:cornflowerblue,font-weight:bold
+  class blue2 squishedText
+  style blue2 color:cornflowerblue,font-weight:bold
+
+  class gnd1 squishedText
+  style gnd1 color:#717171,font-weight:bold
+  class gnd2 squishedText
+  style gnd2 color:#717171,font-weight:bold
+
+  class A0 squishedText
+  style A0 color:darkorange,font-weight:bold
+  class A1 squishedText
+  style A1 color:darkorange,font-weight:bold
+  class A2 squishedText
+  style A2 color:darkorange,font-weight:bold
+  class A3 squishedText
+  style A3 color:darkorange,font-weight:bold
+  class A4 squishedText
+  style A4 color:darkorange,font-weight:bold
+
+  class Clock squishedText
+  style Clock color:goldenrod,font-weight:bold
+  class Latch squishedText
+  style Latch color:goldenrod,font-weight:bold
+  class Enabled squishedText
+  style Enabled color:goldenrod,font-weight:bold
 ```
 
 - Dedicated GPIO
