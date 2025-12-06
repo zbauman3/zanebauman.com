@@ -13,11 +13,11 @@
   &.squishedText {
     .text,
     .label foreignObject {
-      overflow: visible;
-      padding: 0;
-      margin: 0;
-      height: 1px;
-      line-height: 1px;
+      overflow: visible !important;
+      padding: 0 !important;
+      margin: 0 !important;
+      height: 1px !important;
+      line-height: 1px !important;
     }
   }
 
