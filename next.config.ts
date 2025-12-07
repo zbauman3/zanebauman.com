@@ -29,6 +29,8 @@ const configFn = (phase: string) => {
     // ...
     // Error: Cannot find module './prism-xxx
     serverExternalPackages: ["prismjs/components"],
+    // allow local development from phone over local network IP
+    allowedDevOrigins: ["172.*.*.*", "192.*.*.*", "10.*.*.*", "localhost"],
   };
 
   return nextConfig;

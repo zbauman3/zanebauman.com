@@ -6,6 +6,24 @@ import elkLayouts from "@mermaid-js/layout-elk";
 
 import "./MermaidRenderer.scss";
 
+// Apparently Safari doesn't support crypto.randomUUID() unless on `https` or `localhost`.
+// So when connecting from my phone on a local network during development, this breaks.
+// To work around this, we use a simple incrementing counter in development mode.
+const getGlobalUuid = (() => {
+  let counter = 0;
+  return () => {
+    counter += 1;
+    try {
+      if (process.env.NODE_ENV === "development") {
+        return `mermaid-diagram-${counter}`;
+      }
+      return crypto.randomUUID();
+    } catch {
+      return `mermaid-diagram-${counter}`;
+    }
+  };
+})();
+
 export const MermaidRenderer = ({ children }: { children: unknown }) => {
   const [element, setElement] = useState<null | HTMLDivElement>(null);
   const hasLoadedElkRef = useRef(false);
@@ -42,8 +60,7 @@ export const MermaidRenderer = ({ children }: { children: unknown }) => {
     (async () => {
       try {
         // needs an ID, so we generate a random one
-        const uuid = crypto
-          .randomUUID()
+        const uuid = getGlobalUuid()
           .replace(/[^a-zA-Z0-9]/g, "")
           .toLowerCase()
           .replace(/^(\d)/, "a$1");

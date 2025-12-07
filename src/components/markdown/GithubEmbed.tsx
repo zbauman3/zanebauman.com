@@ -25,7 +25,17 @@ const parseUrl = ({ url }: { url: string }) => {
   }
 
   // parse the file type from the pathname. Might need more robust handling here later.
-  const fileType = contentUrl.pathname.split(".").pop()?.trim() || "txt";
+  let fileType = (
+    contentUrl.pathname.split(".").pop()?.trim() || "txt"
+  ).toLowerCase();
+  switch (fileType) {
+    case "h":
+      fileType = "c";
+      break;
+    case "hpp":
+      fileType = "cpp";
+      break;
+  }
 
   const pathParts = contentUrl.pathname.split("/");
   if (pathParts.length < 4) {

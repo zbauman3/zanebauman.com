@@ -91,48 +91,36 @@ flowchart TD
 
 ### led_matrix
 
+The core part of this project is arguably the display driver. It's also the reason I wanted to do this project in the first place. So this component is the one that I easily spent the most time on. I watched a lot of YouTube videos and read a lot of articles on how these display drivers work. But I ultimately ended up getting the best overview from [this lovely article](https://bikerglen.com/projects/lighting/led-panel-1up/) by [Glen Akins](https://www.youtube.com/@GlenAkins/videos). Much of what I will talk about below is covered in much more detail there.
+
+#### The theory
+
+Before diving into the software, it's important to understand the physical layer that the display driver interacts with. LED matrix displays are never fully "on" all at once. Instead, we cycle through all of the rows of the display, two rows on at a time, fast enough to trick the human eye into thinking all rows are lit up. Each pixel is only ever on or off, so dimming is done by changing the amount of time a pixel is on. So a 64x64 matrix is split into two horizontal halves of 64x32. Each of these halves consist of:
+
+- 3x64 shift register with output latching & blanking
+- 5 to 32 address decoder
+- 2,048 RGB LEDs
+
+The 3 shift registers control the red, green, and blue for each **column**. They have a latching circuit allows us to shift in all of the bits without showing them, then display them all at once by toggling the latch signal. It also has a blanking signal to disable all output.
+
+The 5 to 32 address decoder controls the **row** that is active. This is the mechanism we use to quickly cycle through all rows of the display.
+
+Finally, we have the pixels. The circuit can vary by manufacturer, but you can think of the shift registers as driving the `+` for the LEDs and the decoder as driving the `-`. In order to enable a given pixel, you must set the correct shift register/latch and decoder combination to target that pixel.
+
+The physical connector for this system looks like this:
+
 ```mermaid
 flowchart LR
-  matrix@{ shape: rounded, label: "\n&nbsp;\n&nbsp;\n&nbsp;\n&nbsp;\n&nbsp;\n&nbsp;\n&nbsp;64x64\nLED\nMatrix\n&nbsp;\n&nbsp;\n&nbsp;\n&nbsp;\n&nbsp;\n&nbsp;\n&nbsp;" }
+  matrix@{ shape: rounded, label: "\n&nbsp;\n&nbsp;\n&nbsp;\n&nbsp;\n&nbsp;\n&nbsp;\n&nbsp;\n&nbsp;64x64\nLED\nMatrix\n&nbsp;\n&nbsp;\n&nbsp;\n&nbsp;\n&nbsp;\n&nbsp;\n&nbsp;" }
 
-  gnd1@{ shape: text, label: "GND" }
-  gnd2@{ shape: text, label: "GND" }
-
-  red1@{ shape: text }
-  green1@{ shape: text }
-  blue1@{ shape: text }
-
-  red2@{ shape: text }
-  green2@{ shape: text }
-  blue2@{ shape: text }
-
-  A4@{ shape: text }
-  A0@{ shape: text }
-  A1@{ shape: text }
-  A2@{ shape: text }
-  A3@{ shape: text }
-
-  Clock@{ shape: text }
-  Latch@{ shape: text }
-  Enabled@{ shape: text }
-
-  red1 --- matrix
-  blue1 --- matrix
-  red2 --- matrix
-  blue2 --- matrix
-  A0 --- matrix
-  A2 --- matrix
-  Clock --- matrix
-  Enabled --- matrix
-
-  matrix --- green1
-  matrix --- gnd1
-  matrix --- green2
-  matrix --- A4
-  matrix --- A1
-  matrix --- A3
-  matrix --- Latch
-  matrix --- gnd2
+  red1@{ shape: text } --- matrix --- green1@{ shape: text }
+  blue1@{ shape: text } --- matrix --- gnd1@{ shape: text, label: "GND" }
+  red2@{ shape: text } --- matrix --- green2@{ shape: text }
+  blue2@{ shape: text } --- matrix --- A4@{ shape: text }
+  A0@{ shape: text } --- matrix --- A1@{ shape: text }
+  A2@{ shape: text } --- matrix --- A3@{ shape: text }
+  Clock@{ shape: text } --- matrix --- Latch@{ shape: text }
+  Enabled@{ shape: text } --- matrix --- gnd2@{ shape: text, label: "GND" }
 
   class red1 squishedText
   style red1 color:red,font-weight:bold
@@ -173,9 +161,39 @@ flowchart LR
   style Enabled color:goldenrod,font-weight:bold
 ```
 
-- Dedicated GPIO
-  - https://docs.espressif.com/projects/esp-idf/en/stable/esp32s2/api-reference/peripherals/dedic_gpio.html#manipulate-gpios-by-writing-assembly-code
-- https://bikerglen.com/projects/lighting/led-panel-1up/
+<br />
+
+Now that we understand the hardware involved, we can discuss _how_ to show an image on the display. There are different algorithms for driving the display, but I built mine with [24 bit ("true color")](<https://en.wikipedia.org/wiki/Color_depth#True_color_(24-bit)>), so that is the algorithm I'll discuss here. This means that each pixel has 1 byte of data for each red, green, and blue.
+
+1. For each of the 64 columns of a row, shift out bit `0` of the red, green, and blue bytes. This is done by setting the lines for <span style="color:red;">red1</span>, <span style="color:green;">green1</span>, <span style="color:cornflowerblue;">blue1</span>, <span style="color:red;">red2</span>, <span style="color:green;">green2</span> and <span style="color:cornflowerblue;">blue2</span> to the relevant value, pulsing the <span style="color:goldenrod;">Clock</span> line, then repeating for each column.
+2. Disable output using the <span style="color:goldenrod;">Enabled</span> line.
+3. Set the <span style="color:darkorange;">A0</span> ... <span style="color:darkorange;">A4</span> address lines to the value for the row about to be shown.
+4. Pulse the <span style="color:goldenrod;">Latch</span> line to latch the contents of the shift registers to the outputs.
+5. Enable output using the <span style="color:goldenrod;">Enabled</span> line.
+6. Wait for some amount of time (more on this below).
+7. Repeat the process for all 2x32 rows.
+
+These steps will show the lowest bit of each color's byte on the display. Once we've completed a scan of all rows for this first bit in each color, we repeat the process for the next bit by increasing the active bit in step `1` and multiply the amount of time we wait in step `6` by an increasing power of 2. This change in step `6` means that as we spend twice and much time on each bit as the previous one. The result is that a larger number for a color means that the color is displayed for a longer period, tricking the human eye into seeing it brighter.
+
+#### The implementation
+
+There's many ways to implement this algorithm with the hardware and peripherals in an ESP32-S3 – DMA, octal SPI, dedicated GPIO bundles, individual GPIO bit banging, and more. What you choose is largely dependent on the time you want to invest, familiarity with the peripherals, and the requirements of the overall system.
+
+For my implementation, I chose to use a combination of [Dedicated GPIO](https://docs.espressif.com/projects/esp-idf/en/v5.3.1/esp32s3/api-reference/peripherals/dedic_gpio.html), standard GPIO, and [General Purpose Timers](https://docs.espressif.com/projects/esp-idf/en/v5.3.1/esp32s3/api-reference/peripherals/gptimer.html). Using these peripherals through the ESP-IDF provides a lot of niceties and protection logic. But when trying to build a performant display driver in software, those features actually slowed down the driver significantly. As a result, I instead decided to use the ESP-IDF's [Hardware Abstraction Layer APIs](https://github.com/espressif/esp-idf/tree/v5.3.1/components/hal). These are somewhat unstable APIs, as they are likely to change from version to version of the ESP-IDF. Using the "Lower Level" of these APIs gave even better performance, but with minimal protections. Looking at the source, these APIs are really just setting raw bits in registers, often using inline assembly:
+
+<div data-component="GithubEmbed" data-url="https://github.com/espressif/esp-idf/blob/c8fc5f643b7a7b0d3b182d3df610844e3dc9bd74/components/hal/esp32s3/include/hal/dedic_gpio_cpu_ll.h#L46-L50"></div>
+
+<br />
+
+Using Dedicated GPIO means that we can use bit masks to drive 8 bits in a single instruction. It turns out that this is great for working with the 6 bits for 2xRGB and the clock signal. This lets us shift out 1 bit with two instructions: clock low and data bits set, then clock high and data bits persist, then repeat. Unfortunately, with the ESP32-S3 running at 240 MHz, this is actually too fast for the shift registers in the display, and we have to add a nop cycle in there, too:
+
+<div data-component="GithubEmbed" data-url="https://github.com/zbauman3/illumindex/blob/main/firmware/components/led_matrix/led_matrix.c#L20-L25"></div>
+
+<br />
+
+Putting all of this together, we can see that implementing the actual algorithm is fairly simple. This does not include the unrolled logic for shifting out a row, but it's the same as the snippet above, times 64:
+
+<div data-component="GithubEmbed" data-url="https://github.com/zbauman3/illumindex/blob/main/firmware/components/led_matrix/led_matrix.c#L105-L164"></div>
 
 ### network
 

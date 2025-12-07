@@ -11,10 +11,9 @@
 
 .node.default {
   &.squishedText {
-    .text,
-    .label foreignObject,
-    .label foreignObject .nodeLabel,
-    .label foreignObject .nodeLabel p {
+    & .text,
+    & .label foreignObject,
+    & .label foreignObject * {
       overflow: visible !important;
       padding: 0 !important;
       margin: 0 !important;
