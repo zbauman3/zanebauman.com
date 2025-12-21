@@ -13,65 +13,129 @@ image: /assets/illumindex/cover.png
 
 Before diving into the software, it's important to understand the physical layer that the display driver interacts with. All LEDs are never illuminated at the same time in an LED matrix display. Instead, only two rows are illuminated at any given moment – one row on the top half of the display and one row on the bottom half. To show an image on the display, we must cycle through all rows of the display fast enough to trick the human eye into seeing a solid image. Luckily, achieving that speed is trivial for a computer. The ESP32S3 I'm using for this project has two cores operating at 240MHz, which allows me to dedicate one core to the display driver and the other core to everything else.
 
-The display I'm using is 64x64 RGB LEDs. The display is divided into two halves, top and and bottom. Each half is 64x32 and has hardware to control that half. There are 3 64-bit shift registers – one for red, green, and blue – that represent the columns of the display. Between the shift registers and LEDs are latch circuits. This allows the the data for an entire column to be shifted in without displaying a partial row, then the values can be shown all at once by toggling the latch signal. These latches also have a signal that can be used to enable/disable any output, which is used in the algorithm below.
+The display I'm using is 64x64 RGB LEDs. The display is divided into two halves, top and bottom. Each half is 64x32 and has hardware to control that half. There are three 64-bit shift registers – one for red, green, and blue – that represent the columns of the display. Between these shift registers and the LEDs are latch circuits. This allows the the data for all 64 columns to be shifted in slowly and then shown all at once by toggling the latch signal. These latches also have a signal that can be used to enable/disable their output, which is used in the algorithm below.
 
-To select an active row, there is a 5-to-32 address decoder. You can think of the address decoder as selecting which row to connect a negative wire to, and the shift registers as selecting which columns to activate the positive wire (for red, green, and/or blue). Since that means that we are only turning these LEDs on or off, you can probably see some limitations with our color options. If we can only turn on some combination of red, green, and blue, then we can only show red, green, blue, cyan, magenta, yellow, black, and white. To show more colors, we will have to do some tricks in the driver algorithm.
+To select an active row, there is a 5-to-32 address decoder. You can think of the address decoder as selecting which row to connect a negative wire to, and the shift registers as selecting which columns to activate the positive wire (for red, green, and/or blue). If we can only turn on some combination of red, green, and blue, then we can only show red, green, blue, cyan, magenta, yellow, black, and white. To show more colors, we will have to do some tricks in the driver algorithm.
 
-The physical connector for this system looks like this:
+Each half of the matrix has its own shift registers and latches. The two halves share wiring for clock to the shift register, the latch and its enable/disable, and the output from the address decoder. This means that the columns on each half can be controlled separately, but all other features are controlled in unison.
+
+Here's a simplified block diagram of these physical components:
 
 ```mermaid
 flowchart LR
-  matrix@{ shape: rounded, label: "\n&nbsp;\n&nbsp;\n&nbsp;\n&nbsp;\n&nbsp;\n&nbsp;\n&nbsp;\n&nbsp;64x64\nLED\nMatrix\n&nbsp;\n&nbsp;\n&nbsp;\n&nbsp;\n&nbsp;\n&nbsp;\n&nbsp;" }
 
-  Red1@{ shape: text } --- matrix --- Green1@{ shape: text }
-  Blue1@{ shape: text } --- matrix --- gnd1@{ shape: text, label: "GND" }
-  Red2@{ shape: text } --- matrix --- Green2@{ shape: text }
-  Blue2@{ shape: text } --- matrix --- A4@{ shape: text }
-  A0@{ shape: text } --- matrix --- A1@{ shape: text }
-  A2@{ shape: text } --- matrix --- A3@{ shape: text }
-  Clock@{ shape: text } --- matrix --- Latch@{ shape: text }
-  Enabled@{ shape: text } --- matrix --- gnd2@{ shape: text, label: "GND" }
+  subgraph bottomComp ["Bottom Color Control"]
+    direction TB
+    matrixLatchB@{ shape: rounded, label: "&nbsp;\nRGB\nOutput Latch\n&nbsp;" }
+    matrixShiftB@{ shape: rounded, label: "&nbsp;\nRGBx64\nShift Register\n&nbsp;" }
 
+    matrixShiftB --RGB--- matrixLatchB
+  end
+
+  subgraph topComp ["Top Color Control"]
+    direction TB
+    matrixLatchT@{ shape: rounded, label: "&nbsp;\nRGB\nOutput Latch\n&nbsp;" }
+    matrixShiftT@{ shape: rounded, label: "&nbsp;\nRGBx64\nShift Register\n&nbsp;" }
+
+    matrixShiftT --RGB--- matrixLatchT
+  end
+
+  subgraph "64x64 RGB LEDs"
+    direction TB
+    ledB@{ shape: rounded, label: "&nbsp;\n&nbsp;\n&nbsp;\n&nbsp;\n&nbsp;\nBottom\n64x32\nRGB LEDs\n&nbsp;\n&nbsp;\n&nbsp;\n&nbsp;\n&nbsp;" }
+    ledT@{ shape: rounded, label: "&nbsp;\n&nbsp;\n&nbsp;\n&nbsp;\n&nbsp;\nTop\n64x32\nRGB LEDs\n&nbsp;\n&nbsp;\n&nbsp;\n&nbsp;\n&nbsp;" }
+  end
+
+  matrixLatchB --RGBx64--- ledB
+  matrixLatchT --RGBx64--- ledT
+  address --"[0...31]" --- ledT
+  address --"[0...31]"--- ledB
+
+  Red1@{ shape: text } --- matrixShiftT
+  Green1@{ shape: text } --- matrixShiftT
+  Blue1@{ shape: text } --- matrixShiftT
+
+  Latch@{ shape: text } --- matrixLatchT
+  Clock@{ shape: text } --- matrixShiftT
+  Enabled@{ shape: text } --- matrixLatchT
+
+  Clock@{ shape: text } --- matrixShiftB
+  Latch@{ shape: text } --- matrixLatchB
+  Enabled@{ shape: text } --- matrixLatchB
+
+  Red2@{ shape: text } --- matrixShiftB
+  Green2@{ shape: text } --- matrixShiftB
+  Blue2@{ shape: text } --- matrixShiftB
+
+  address@{ shape: rounded, label: "&nbsp;\n&nbsp;\n5-to-32\nAddress Decoder\n&nbsp;\n&nbsp;" }
+
+  A0@{ shape: text } --- address
+  A1@{ shape: text } --- address
+  A2@{ shape: text } --- address
+  A3@{ shape: text } --- address
+  A4@{ shape: text } --- address
+
+  class Red1 redNode
   class Red1 squishedText
-  style Red1 color:red,font-weight:bold
-  class Red2 squishedText
-  style Red2 color:red,font-weight:bold
-
+  class Green1 greenNode
   class Green1 squishedText
-  style Green1 color:green,font-weight:bold
-  class Green2 squishedText
-  style Green2 color:green,font-weight:bold
-
+  class Blue1 blueNode
   class Blue1 squishedText
-  style Blue1 color:cornflowerblue,font-weight:bold
+  class Red2 redNode
+  class Red2 squishedText
+  class Green2 greenNode
+  class Green2 squishedText
+  class Blue2 blueNode
   class Blue2 squishedText
-  style Blue2 color:cornflowerblue,font-weight:bold
-
-  class gnd1 squishedText
-  style gnd1 color:#717171,font-weight:bold
-  class gnd2 squishedText
-  style gnd2 color:#717171,font-weight:bold
-
-  class A0 squishedText
-  style A0 color:darkorange,font-weight:bold
-  class A1 squishedText
-  style A1 color:darkorange,font-weight:bold
-  class A2 squishedText
-  style A2 color:darkorange,font-weight:bold
-  class A3 squishedText
-  style A3 color:darkorange,font-weight:bold
-  class A4 squishedText
-  style A4 color:darkorange,font-weight:bold
-
-  class Clock squishedText
-  style Clock color:goldenrod,font-weight:bold
+  class Latch orangeNode
   class Latch squishedText
-  style Latch color:goldenrod,font-weight:bold
+  class Clock orangeNode
+  class Clock squishedText
+  class Enabled orangeNode
   class Enabled squishedText
-  style Enabled color:goldenrod,font-weight:bold
+
+  class A0 yellowNode
+  class A0 squishedText
+  class A1 yellowNode
+  class A1 squishedText
+  class A2 yellowNode
+  class A2 squishedText
+  class A3 yellowNode
+  class A3 squishedText
+  class A4 yellowNode
+  class A4 squishedText
+
+  classDef redNode color:red, font-weight: bold
+  classDef greenNode color:green, font-weight: bold
+  classDef blueNode color:cornflowerblue, font-weight: bold
+  classDef orangeNode color:darkorange, font-weight: bold
+  classDef yellowNode color:goldenrod, font-weight: bold
 ```
 
+<br />
+
 ## The Algorithm
+
+Now that we understand the hardware involved, we can discuss _how_ to show an image on the display using software. There are different algorithms for driving the display, but I built mine with [24 bit, true color](<https://en.wikipedia.org/wiki/Color_depth#True_color_(24-bit)>). Meaning, pixels have 1 byte of data each for red, green, and blue – but as discussed above, we can only ever turn a given pixel on or off, giving us 8 possible combinations. To turn these three bytes of data into the 16,777,216 colors available in 24 bit color, we'll need to incorporate a form of [pulse-width modulation](https://en.wikipedia.org/wiki/Pulse-width_modulation) called "binary coded modulation". Here's the algorithm:
+
+1. For each of the 64 columns, set <span style="color:red;">Red1</span>, <span style="color:green;">Green1</span>, <span style="color:cornflowerblue;">Blue1</span>, <span style="color:red;">Red2</span>, <span style="color:green;">Green2</span> and <span style="color:cornflowerblue;">Blue2</span> to the value of `bit N` in the RGB bytes for the current row. Then toggle the <span style="color:goldenrod;">Clock</span> line.
+2. Disable output using the <span style="color:goldenrod;">Enabled</span> line.
+3. Set the <span style="color:darkorange;">A0</span> ... <span style="color:darkorange;">A4</span> address lines to the value of the row about to be shown.
+4. Pulse the <span style="color:goldenrod;">Latch</span> line to latch the contents of the shift registers to the outputs.
+5. Enable output using the <span style="color:goldenrod;">Enabled</span> line.
+6. Wait for some amount of time (more on this below).
+7. Repeat `1...6` for all 32 row addresses.
+8. Increment `bit N` in the RGB bytes and repeat `1...7` for all 8 bits.
+
+The most important part is the amount of time to wait in step `6`. This is where the binary coded modulation happens. To achieve this, pick a base amount of time and multiply it by 2 to the power of the active bit number: `time * 2^bit`. So if we picked a base time of 0.7µs, the amount of time we would wait in step `6` for each bit would be: `bit0 = 0.7µs`, `bit1 = 1.4µs`, `bit2 = 2.8µs`, `bit3 = 5.6µs`, `bit4 = 11.2µs`, `bit5 = 22.4µs`, `bit6 = 44.8µs`, `bit7 = 89.6µs`. This means that more significant bits are on for longer, and thus a larger number appears brighter to the human eye.
+
+Picking this base amount of time is a balance between the capabilities of the MCU and the flickering of the screen. To small of a time and the MCU will not be able to complete all steps of the algorithm before it needs to move on to the next row/bit. Too large of a time and the algorithm will take too long the draw all rows/bits and appear flickery to the viewer. Ideally, this number should be fine tuned, along with the real-life timings of the algorithm's implementation to land on a number where the entire screen is drawing a full frame at 120-240Hz. Here are the calculations I came up with:
+
+<div data-component="GithubEmbed" data-url="https://github.com/zbauman3/illumindex/blob/main/firmware/components/led_matrix/include/led_matrix.h#L7-L27"></div>
+
+<br />
+
+In this calculation, `cycles` is the number of CPU cycles to complete the algorithm for a single bit. Dividing this by the CPU frequency, adding in misc overhead, and multiplying by 8, gives us _active CPU time_ for one byte being processed by the algorithm (`oneByte`). From there we add the total amount of time waiting between each bit in a byte (`rowTimers`), and multiply by 32 for all rows. This leaves us with a screen refresh rate of 119.05Hz. It's not a perfect 120, but it's good enough for me.
 
 ## The Implementation
 
@@ -166,17 +230,6 @@ The core part of this project is arguably the display driver. It's also the reas
 
 <br />
 
-Now that we understand the hardware involved, we can discuss _how_ to show an image on the display. There are different algorithms for driving the display, but I built mine with [24 bit ("true color")](<https://en.wikipedia.org/wiki/Color_depth#True_color_(24-bit)>), so that is the algorithm I'll discuss here. This means that each pixel has 1 byte of data for each red, green, and blue.
-
-1. For each of the 64 columns of a row, shift out bit `0` of the red, green, and blue bytes. This is done by setting the lines for <span style="color:red;">Red1</span>, <span style="color:green;">Green1</span>, <span style="color:cornflowerblue;">Blue1</span>, <span style="color:red;">Red2</span>, <span style="color:green;">Green2</span> and <span style="color:cornflowerblue;">Blue2</span> to the relevant value, pulsing the <span style="color:goldenrod;">Clock</span> line, then repeating for each column.
-2. Disable output using the <span style="color:goldenrod;">Enabled</span> line.
-3. Set the <span style="color:darkorange;">A0</span> ... <span style="color:darkorange;">A4</span> address lines to the value for the row about to be shown.
-4. Pulse the <span style="color:goldenrod;">Latch</span> line to latch the contents of the shift registers to the outputs.
-5. Enable output using the <span style="color:goldenrod;">Enabled</span> line.
-6. Wait for some amount of time (more on this below).
-7. Repeat the process for all 2x32 rows.
-
-These steps will show the lowest bit of each color's byte on the display. Once we've completed a scan of all rows for this first bit in each color, we repeat the process for the next bit by increasing the active bit in step `1` and multiply the amount of time we wait in step `6` by an increasing power of 2. This change in step `6` means that as we spend twice and much time on each bit as the previous one. The result is that a larger number for a color means that the color is displayed for a longer period, tricking the human eye into seeing it brighter.
 
 #### The implementation
 
