@@ -9,11 +9,76 @@ lastModified: 11/29/2025
 image: /assets/illumindex/cover.png
 -->
 
+## The Hardware
+
+Before diving into the software, it's important to understand the physical layer that the display driver interacts with. All LEDs are never illuminated at the same time in an LED matrix display. Instead, only two rows are illuminated at any given moment – one row on the top half of the display and one row on the bottom half. To show an image on the display, we must cycle through all rows of the display fast enough to trick the human eye into seeing a solid image. Luckily, achieving that speed is trivial for a computer. The ESP32S3 I'm using for this project has two cores operating at 240MHz, which allows me to dedicate one core to the display driver and the other core to everything else.
+
+The display I'm using is 64x64 RGB LEDs. The display is divided into two halves, top and and bottom. Each half is 64x32 and has hardware to control that half. There are 3 64-bit shift registers – one for red, green, and blue – that represent the columns of the display. Between the shift registers and LEDs are latch circuits. This allows the the data for an entire column to be shifted in without displaying a partial row, then the values can be shown all at once by toggling the latch signal. These latches also have a signal that can be used to enable/disable any output, which is used in the algorithm below.
+
+To select an active row, there is a 5-to-32 address decoder. You can think of the address decoder as selecting which row to connect a negative wire to, and the shift registers as selecting which columns to activate the positive wire (for red, green, and/or blue). Since that means that we are only turning these LEDs on or off, you can probably see some limitations with our color options. If we can only turn on some combination of red, green, and blue, then we can only show red, green, blue, cyan, magenta, yellow, black, and white. To show more colors, we will have to do some tricks in the driver algorithm.
+
+The physical connector for this system looks like this:
+
+```mermaid
+flowchart LR
+  matrix@{ shape: rounded, label: "\n&nbsp;\n&nbsp;\n&nbsp;\n&nbsp;\n&nbsp;\n&nbsp;\n&nbsp;\n&nbsp;64x64\nLED\nMatrix\n&nbsp;\n&nbsp;\n&nbsp;\n&nbsp;\n&nbsp;\n&nbsp;\n&nbsp;" }
+
+  Red1@{ shape: text } --- matrix --- Green1@{ shape: text }
+  Blue1@{ shape: text } --- matrix --- gnd1@{ shape: text, label: "GND" }
+  Red2@{ shape: text } --- matrix --- Green2@{ shape: text }
+  Blue2@{ shape: text } --- matrix --- A4@{ shape: text }
+  A0@{ shape: text } --- matrix --- A1@{ shape: text }
+  A2@{ shape: text } --- matrix --- A3@{ shape: text }
+  Clock@{ shape: text } --- matrix --- Latch@{ shape: text }
+  Enabled@{ shape: text } --- matrix --- gnd2@{ shape: text, label: "GND" }
+
+  class Red1 squishedText
+  style Red1 color:red,font-weight:bold
+  class Red2 squishedText
+  style Red2 color:red,font-weight:bold
+
+  class Green1 squishedText
+  style Green1 color:green,font-weight:bold
+  class Green2 squishedText
+  style Green2 color:green,font-weight:bold
+
+  class Blue1 squishedText
+  style Blue1 color:cornflowerblue,font-weight:bold
+  class Blue2 squishedText
+  style Blue2 color:cornflowerblue,font-weight:bold
+
+  class gnd1 squishedText
+  style gnd1 color:#717171,font-weight:bold
+  class gnd2 squishedText
+  style gnd2 color:#717171,font-weight:bold
+
+  class A0 squishedText
+  style A0 color:darkorange,font-weight:bold
+  class A1 squishedText
+  style A1 color:darkorange,font-weight:bold
+  class A2 squishedText
+  style A2 color:darkorange,font-weight:bold
+  class A3 squishedText
+  style A3 color:darkorange,font-weight:bold
+  class A4 squishedText
+  style A4 color:darkorange,font-weight:bold
+
+  class Clock squishedText
+  style Clock color:goldenrod,font-weight:bold
+  class Latch squishedText
+  style Latch color:goldenrod,font-weight:bold
+  class Enabled squishedText
+  style Enabled color:goldenrod,font-weight:bold
+```
+
+## The Algorithm
+
+## The Implementation
+
 <!--
 TODO:
 - Why I didn't use MQTT
--
--->
+
 
 ## About
 
@@ -53,6 +118,8 @@ I broke down the individual pieces of the firmware into logical sections, depend
 
 I'll talk about each of these components in detail below.
 
+-->
+
 ```mermaid
 flowchart TD
   main(main)
@@ -87,85 +154,21 @@ flowchart TD
   state --> fetch
 ```
 
+<!--
+
 <br />
 
 ### led_matrix
 
 The core part of this project is arguably the display driver. It's also the reason I wanted to do this project in the first place. So this component is the one that I easily spent the most time on. I watched a lot of YouTube videos and read a lot of articles on how these display drivers work. But I ultimately ended up getting the best overview from [this lovely article](https://bikerglen.com/projects/lighting/led-panel-1up/) by [Glen Akins](https://www.youtube.com/@GlenAkins/videos). Much of what I will talk about below is covered in much more detail there.
 
-#### The theory
 
-Before diving into the software, it's important to understand the physical layer that the display driver interacts with. LED matrix displays are never fully "on" all at once. Instead, we cycle through all of the rows of the display, two rows on at a time, fast enough to trick the human eye into thinking all rows are lit up. Each pixel is only ever on or off, so dimming is done by changing the amount of time a pixel is on. So a 64x64 matrix is split into two horizontal halves of 64x32. Each of these halves consist of:
-
-- 3x64 shift register with output latching & blanking
-- 5 to 32 address decoder
-- 2,048 RGB LEDs
-
-The 3 shift registers control the red, green, and blue for each **column**. They have a latching circuit allows us to shift in all of the bits without showing them, then display them all at once by toggling the latch signal. It also has a blanking signal to disable all output.
-
-The 5 to 32 address decoder controls the **row** that is active. This is the mechanism we use to quickly cycle through all rows of the display.
-
-Finally, we have the pixels. The circuit can vary by manufacturer, but you can think of the shift registers as driving the `+` for the LEDs and the decoder as driving the `-`. In order to enable a given pixel, you must set the correct shift register/latch and decoder combination to target that pixel.
-
-The physical connector for this system looks like this:
-
-```mermaid
-flowchart LR
-  matrix@{ shape: rounded, label: "\n&nbsp;\n&nbsp;\n&nbsp;\n&nbsp;\n&nbsp;\n&nbsp;\n&nbsp;\n&nbsp;64x64\nLED\nMatrix\n&nbsp;\n&nbsp;\n&nbsp;\n&nbsp;\n&nbsp;\n&nbsp;\n&nbsp;" }
-
-  red1@{ shape: text } --- matrix --- green1@{ shape: text }
-  blue1@{ shape: text } --- matrix --- gnd1@{ shape: text, label: "GND" }
-  red2@{ shape: text } --- matrix --- green2@{ shape: text }
-  blue2@{ shape: text } --- matrix --- A4@{ shape: text }
-  A0@{ shape: text } --- matrix --- A1@{ shape: text }
-  A2@{ shape: text } --- matrix --- A3@{ shape: text }
-  Clock@{ shape: text } --- matrix --- Latch@{ shape: text }
-  Enabled@{ shape: text } --- matrix --- gnd2@{ shape: text, label: "GND" }
-
-  class red1 squishedText
-  style red1 color:red,font-weight:bold
-  class red2 squishedText
-  style red2 color:red,font-weight:bold
-
-  class green1 squishedText
-  style green1 color:green,font-weight:bold
-  class green2 squishedText
-  style green2 color:green,font-weight:bold
-
-  class blue1 squishedText
-  style blue1 color:cornflowerblue,font-weight:bold
-  class blue2 squishedText
-  style blue2 color:cornflowerblue,font-weight:bold
-
-  class gnd1 squishedText
-  style gnd1 color:#717171,font-weight:bold
-  class gnd2 squishedText
-  style gnd2 color:#717171,font-weight:bold
-
-  class A0 squishedText
-  style A0 color:darkorange,font-weight:bold
-  class A1 squishedText
-  style A1 color:darkorange,font-weight:bold
-  class A2 squishedText
-  style A2 color:darkorange,font-weight:bold
-  class A3 squishedText
-  style A3 color:darkorange,font-weight:bold
-  class A4 squishedText
-  style A4 color:darkorange,font-weight:bold
-
-  class Clock squishedText
-  style Clock color:goldenrod,font-weight:bold
-  class Latch squishedText
-  style Latch color:goldenrod,font-weight:bold
-  class Enabled squishedText
-  style Enabled color:goldenrod,font-weight:bold
-```
 
 <br />
 
 Now that we understand the hardware involved, we can discuss _how_ to show an image on the display. There are different algorithms for driving the display, but I built mine with [24 bit ("true color")](<https://en.wikipedia.org/wiki/Color_depth#True_color_(24-bit)>), so that is the algorithm I'll discuss here. This means that each pixel has 1 byte of data for each red, green, and blue.
 
-1. For each of the 64 columns of a row, shift out bit `0` of the red, green, and blue bytes. This is done by setting the lines for <span style="color:red;">red1</span>, <span style="color:green;">green1</span>, <span style="color:cornflowerblue;">blue1</span>, <span style="color:red;">red2</span>, <span style="color:green;">green2</span> and <span style="color:cornflowerblue;">blue2</span> to the relevant value, pulsing the <span style="color:goldenrod;">Clock</span> line, then repeating for each column.
+1. For each of the 64 columns of a row, shift out bit `0` of the red, green, and blue bytes. This is done by setting the lines for <span style="color:red;">Red1</span>, <span style="color:green;">Green1</span>, <span style="color:cornflowerblue;">Blue1</span>, <span style="color:red;">Red2</span>, <span style="color:green;">Green2</span> and <span style="color:cornflowerblue;">Blue2</span> to the relevant value, pulsing the <span style="color:goldenrod;">Clock</span> line, then repeating for each column.
 2. Disable output using the <span style="color:goldenrod;">Enabled</span> line.
 3. Set the <span style="color:darkorange;">A0</span> ... <span style="color:darkorange;">A4</span> address lines to the value for the row about to be shown.
 4. Pulse the <span style="color:goldenrod;">Latch</span> line to latch the contents of the shift registers to the outputs.
@@ -269,3 +272,4 @@ The schematic was designed with KiCad.
 - [illumindex.kicad_sch](https://github.com/zbauman3/illumindex/blob/main/hardware/illumindex.kicad_sch)
 
 <img src="/assets/illumindex/schema.png" style="width: 100%; max-width: 400px;" />
+-->

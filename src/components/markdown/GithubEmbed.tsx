@@ -99,7 +99,7 @@ const lineCountPrefix = ({
 }) =>
   `<span class="text-stone-300 dark:text-stone-700 select-none">${String(
     lineNumber
-  ).padEnd(padding, "  ")}</span>`;
+  ).padEnd(padding, "  ")}&nbsp;</span>`;
 
 const generateHtmlString = ({
   content,
