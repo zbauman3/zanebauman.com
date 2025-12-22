@@ -25,7 +25,17 @@ const parseUrl = ({ url }: { url: string }) => {
   }
 
   // parse the file type from the pathname. Might need more robust handling here later.
-  const fileType = contentUrl.pathname.split(".").pop()?.trim() || "txt";
+  let fileType = (
+    contentUrl.pathname.split(".").pop()?.trim() || "txt"
+  ).toLowerCase();
+  switch (fileType) {
+    case "h":
+      fileType = "c";
+      break;
+    case "hpp":
+      fileType = "cpp";
+      break;
+  }
 
   const pathParts = contentUrl.pathname.split("/");
   if (pathParts.length < 4) {
@@ -77,7 +87,7 @@ const fetchContent = async ({
     content = selectedLines.join("\n");
   }
 
-  return content.trim();
+  return content.replace(/(^\n+|\n+$)/, "");
 };
 
 const lineCountPrefix = ({
@@ -89,7 +99,7 @@ const lineCountPrefix = ({
 }) =>
   `<span class="text-stone-300 dark:text-stone-700 select-none">${String(
     lineNumber
-  ).padEnd(padding, "  ")}</span>`;
+  ).padEnd(padding, "  ")}&nbsp;</span>`;
 
 const generateHtmlString = ({
   content,
