@@ -17,19 +17,27 @@ Thus "Illumindex" was born, short for "Illuminated Information Index" (yes, the 
 
 ## Software
 
+> The software is open source and available at [github.com/zbauman3/illumindex](https://github.com/zbauman3/illumindex).
+
+The primary goal of this project, from a software perspective, was to learn how to build a display driver and design a small but complete IoT system from the ground up. To support that goal, I chose to write all of the application code myself. No third-party libraries are used in the firmware; the roughly 4,000 lines of code that make up the system are entirely my own.
+
+The project is built on top of the [ESP-IDF](https://docs.espressif.com/projects/esp-idf/en/v5.3.1/esp32s3/get-started/index.html), the official SDK provided by Espressif for the ESP32 family of microcontrollers. Using the ESP-IDF provides access to the underlying hardware, startup code, and toolchain support without abstracting away the details that are important when working close to the metal.
+
+For the backend, I used a simple serverless application built with Next.js and deployed on Vercel. This stack mirrors what I use day to day at work, which made it easy to stand up a basic API endpoint quickly and iterate without friction. The backend primarily serves as a lightweight data source for the device, but also houses some visual development utilities like a local simulator that mirrors the current state of the LED matrix and a small utility for drawing and generating bitmaps.
+
 ### The Display Driver
 
-> The software is open source and available at [github.com/zbauman3/illumindex](https://github.com/zbauman3/illumindex).
+The display driver is easily the most interesting part of this project, and will be covered in the most detail. For more detailed information on it, feel free to checkout the source code [here](https://github.com/zbauman3/illumindex/tree/main/firmware/components/led_matrix).
 
 #### What is an LED Matrix?
 
-Before diving into the software, it's important to understand the physical layer that the display driver interacts with. All LEDs are never illuminated at the same time in an LED matrix display. Instead, only two rows are illuminated at any given moment – one row on the top half of the display and one row on the bottom half. To show an image on the display, we must cycle through all rows of the display fast enough to trick the human eye into seeing a solid image. Luckily, achieving that speed is trivial for a computer. The ESP32-S3 I'm using for this project has two cores operating at 240MHz, which allows me to dedicate one core to the display driver and the other core to everything else.
+Before diving into the software, it is important to understand the physical layer that the display driver interacts with. In an LED matrix display, not all LEDs are illuminated at the same time. Instead, only two rows are active at any given moment: one row on the top half of the display and one row on the bottom half. To show an image, the system rapidly cycles through all rows of the display, fast enough to exploit persistence of vision and appear as a solid image. Achieving this refresh speed is trivial for a microcontroller. The ESP32-S3 used in this project has two cores operating at 240 MHz, which allows one core to be dedicated to the display driver while the other handles everything else.
 
-The display I'm using is 64x64 RGB LEDs. The display is divided into two halves, top and bottom. Each half is 64x32 and has hardware to control that half. There are three 64-bit shift registers – one for red, green, and blue – that represent the columns of the display. Between these shift registers and the LEDs are latch circuits. This allows the the data for all 64 columns to be shifted in slowly and then shown all at once by toggling the latch signal. These latches also have a signal that can be used to enable/disable their output, which is used in the algorithm below.
+The display used here is a 64x64 RGB LED matrix. It is divided into two halves, top and bottom, with each half measuring 64x32 and containing its own control hardware. Each half uses three 64-bit shift registers, one for red, green, and blue, which represent the columns of the display. Between these shift registers and the LEDs are latch circuits. These latches allow the data for all 64 columns to be shifted in slowly and then displayed simultaneously by toggling the latch signal. The latches also expose an enable/disable signal, which is used by the driver algorithm described later.
 
-To select an active row, there is a 5-to-32 address decoder. You can think of the address decoder as selecting which row to connect a negative wire to, and the shift registers as selecting which columns to activate the positive wire (for red, green, and/or blue). If we can only turn on some combination of red, green, and blue, then we can only show red, green, blue, cyan, magenta, yellow, black, and white. To show more colors, we will have to do some tricks in the driver algorithm.
+Row selection is handled by a 5-to-32 address decoder. Conceptually, the address decoder selects which row is connected to the negative side of the circuit, while the shift registers determine which columns drive the positive side for red, green, and/or blue. With simple on/off control of red, green, and blue, the display is limited to eight colors: red, green, blue, cyan, magenta, yellow, black, and white. Producing additional colors requires more advanced techniques in the display driver that is covered below.
 
-Each half of the matrix has its own shift registers and latches. The two halves share wiring for clock to the shift register, the latch and its enable/disable, and the output from the address decoder. This means that the columns on each half can be controlled separately, but all other features are controlled in unison.
+Each half of the matrix has its own set of shift registers and latches. However, both halves share the clock signal for the shift registers, the latch control and enable signals, and the output from the address decoder. This means that while the columns on each half can be controlled independently, all other control signals operate in unison across the entire display.
 
 Here's a simplified block diagram of these physical components:
 
@@ -128,58 +136,80 @@ flowchart LR
 
 #### The Algorithm
 
-Now that we understand the hardware involved, we can discuss _how_ to show an image on the display using software. There are different algorithms for driving the display, but I built mine with [24 bit, true color](<https://en.wikipedia.org/wiki/Color_depth#True_color_(24-bit)>). Meaning, pixels have 1 byte of data each for red, green, and blue – but as discussed above, we can only ever turn a given pixel on or off, giving us 8 possible combinations. To turn these three bytes of data into the 16,777,216 colors available in 24 bit color, we'll need to incorporate a form of [pulse-width modulation](https://en.wikipedia.org/wiki/Pulse-width_modulation) called "binary coded modulation". Here's the algorithm:
+Now that we understand the hardware involved, we can discuss how to show an image on the display using software. There are several possible approaches for driving an LED matrix, but the driver described here is built around [24 bit, true color](<https://en.wikipedia.org/wiki/Color_depth#True_color_(24-bit)>). Each pixel stores one byte each for red, green, and blue. As discussed earlier, however, the hardware can only turn each color channel fully on or fully off, giving us just eight possible color combinations per pixel. To translate 24-bit color data into the 16,777,216 possible colors of true color, the driver uses a form of [pulse-width modulation](https://en.wikipedia.org/wiki/Pulse-width_modulation) called binary coded modulation (BCM).
 
-1. For each of the 64 columns, set <span style="color:red;">Red1</span>, <span style="color:green;">Green1</span>, <span style="color:cornflowerblue;">Blue1</span>, <span style="color:red;">Red2</span>, <span style="color:green;">Green2</span> and <span style="color:cornflowerblue;">Blue2</span> to the value of `bit N` in the RGB bytes for the current row. Then toggle the <span style="color:goldenrod;">Clock</span> line.
+At a high level, the algorithm works by repeatedly displaying individual bits of the color data, holding more significant bits on the screen for longer periods of time. The steps below describe a single pass through the display:
+
+1. For each of the 64 columns, set <span style="color:red;">Red1</span>, <span style="color:green;">Green1</span>, <span style="color:cornflowerblue;">Blue1</span>, <span style="color:red;">Red2</span>, <span style="color:green;">Green2</span> and <span style="color:cornflowerblue;">Blue2</span> to the value of `bit N` in the RGB bytes for the current row. Toggle the <span style="color:goldenrod;">Clock</span> line to shift this data into the registers.
 2. Disable output using the <span style="color:goldenrod;">Enabled</span> line.
-3. Set the <span style="color:darkorange;">A0</span> ... <span style="color:darkorange;">A4</span> address lines to the value of the row about to be shown.
-4. Pulse the <span style="color:goldenrod;">Latch</span> line to latch the contents of the shift registers to the outputs.
+3. Set the <span style="color:darkorange;">A0</span> ... <span style="color:darkorange;">A4</span> address lines to select the row about to be displayed.
+4. Pulse the <span style="color:goldenrod;">Latch</span> line to copy the contents of the shift registers to the outputs.
 5. Enable output using the <span style="color:goldenrod;">Enabled</span> line.
-6. Wait for some amount of time (more on this below).
-7. Repeat `1...6` for all 32 row addresses.
-8. Increment `bit N` in the RGB bytes and repeat `1...7` for all 8 bits.
+6. Wait for a specific amount of time.
+7. Repeat steps 1 through 6 for all 32 row addresses.
+8. Increment `bit N` and repeat steps 1 through 7 for all 8 bits.
 
-The most important part is the amount of time to wait in step `6`. This is where the binary coded modulation happens. To achieve this, pick a base amount of time and multiply it by 2 to the power of the active bit number: `time * 2^bit`. So if we picked a base time of 0.7µs, the amount of time we would wait in step `6` for each bit would be: `bit0 = 0.7µs`, `bit1 = 1.4µs`, `bit2 = 2.8µs`, `bit3 = 5.6µs`, `bit4 = 11.2µs`, `bit5 = 22.4µs`, `bit6 = 44.8µs`, `bit7 = 89.6µs`. This means that more significant bits are on for longer, and thus a larger number appears brighter to the human eye.
+The most important part of this process is the delay in step 6. This delay is what enables binary coded modulation. A base time is chosen and multiplied by 2 raised to the power of the current bit index: `time * 2^bit`. For example, with a base time of 0.7 µs, the delays for each bit would be:
 
-Picking this base amount of time is a balance between the capabilities of the MCU and the flickering of the screen. To small of a time and the MCU will not be able to complete all steps of the algorithm before it needs to move on to the next row/bit. Too large of a time and the algorithm will take too long the draw all rows/bits and appear flickery to the viewer. Ideally, this number should be fine tuned, along with the real-life timings of the algorithm's implementation to land on a number where the entire screen is drawing a full frame at 120-240Hz. Here are the calculations I came up with:
+- Bit 0: 0.7µs
+- Bit 1: 1.4µs
+- Bit 2: 2.8µs
+- Bit 3: 5.6µs
+- Bit 4: 11.2µs
+- Bit 5: 22.4µs
+- Bit 6: 44.8µs
+- Bit 7: 89.6µs
+
+More significant bits remain illuminated for longer periods, which causes larger numerical values to appear brighter to the human eye, and enables mixing of different ratios of red, green, and blue to achieve "true color".
+
+Choosing the base delay time is a balancing act between microcontroller performance and visible flickering. If the delay is too short, the MCU will not be able to complete all steps of the algorithm before moving on to the next row or bit. If the delay is too long, the total time required to draw all rows and bits increases, causing the display to appear flickery. Ideally, this value is tuned alongside the real-world execution time of the driver so that the entire display refreshes at a full-frame rate of roughly 120 to 240 Hz.
+
+Here are the calculations I came up with for Illumindex:
 
 <div data-component="GithubEmbed" data-url="https://github.com/zbauman3/illumindex/blob/main/firmware/components/led_matrix/include/led_matrix.h#L7-L27"></div>
 
 <br />
 
-In this calculation, `cycles` is the number of CPU cycles to complete the algorithm for a single bit. Dividing this by the CPU frequency, adding in misc overhead, and multiplying by 8, gives us _active CPU time_ for one byte being processed by the algorithm (`oneByte`). From there we add the total amount of time waiting between each bit in a byte (`rowTimers`), and multiply by 32 for all rows. This leaves us with a screen refresh rate of 119.05Hz. It's not a perfect 120, but it's good enough for me.
+In this calculation, `cycles` represents the number of CPU cycles required to execute the algorithm for a single bit. Dividing this value by the CPU frequency, accounting for miscellaneous overhead, and then multiplying by 8 yields the total active CPU time needed to process one byte of color data (`oneByte`).
+
+Next, the total delay time spent waiting between each bit (`rowTimers`) is added, and the result is multiplied by 32 to account for all rows in the display. This produces a full-screen refresh rate of 119.05 Hz. It's not a perfect 120, but it's good enough for me.
 
 #### The Implementation
 
-There's a ton of options to use when implementing this algorithm in an ESP32-S3. I ended up using a combination of [Dedicated GPIO](https://docs.espressif.com/projects/esp-idf/en/v5.3.1/esp32s3/api-reference/peripherals/dedic_gpio.html), [Standard GPIO](https://docs.espressif.com/projects/esp-idf/en/v5.3.1/esp32s3/api-reference/peripherals/gpio.html), and [General Purpose Timer](https://docs.espressif.com/projects/esp-idf/en/v5.3.1/esp32s3/api-reference/peripherals/gptimer.html). There are definitely more efficient ways of implementing this, the most obvious being the combination of SPI and DMA, but I wanted to have deep interaction with the output to keep things simple.
+There are many ways to implement this algorithm on the ESP32-S3. For this project, I chose a combination of [Dedicated GPIO](https://docs.espressif.com/projects/esp-idf/en/v5.3.1/esp32s3/api-reference/peripherals/dedic_gpio.html), [Standard GPIO](https://docs.espressif.com/projects/esp-idf/en/v5.3.1/esp32s3/api-reference/peripherals/gpio.html), and [General Purpose Timer](https://docs.espressif.com/projects/esp-idf/en/v5.3.1/esp32s3/api-reference/peripherals/gptimer.html). While there are more efficient approaches (like using SPI with DMA) I wanted direct, fine-grained control over the output signals to keep the overall design and behavior easier to reason about.
 
-Using these peripherals through the ESP-IDF's high-level APIs adds a lot of overhead, due to additional safety checks and conditional logic. When you're trying to implement this algorithm in a few thousand CPU cycles, all of those additional checks begin to add up. For scenarios where you want to interact with the hardware at a much lower level, the ESP-IDF offers the [Hardware Abstraction](https://docs.espressif.com/projects/esp-idf/en/v5.3.1/esp32s3/api-guides/hardware-abstraction.html) APIs. These APIs underpin large portions of the logic that the ESP-IDF is built on top of, and at the lower level they often interact with the hardware through inlined assembly calls in C, making them ideal for writing fast logic at the cost of needing to use extra care with the implementation. Using this method can reduce the number of instructions required to flip bits to a handful of instructions. For example, outputting 8 bits with Dedicated GPIO in a single instruction:
+Using the ESP-IDF high-level APIs introduces noticeable overhead due to safety checks and conditional logic. When the goal is to execute the display algorithm within a few thousand CPU cycles, that overhead adds up quickly. For lower-level, performance-critical code paths, ESP-IDF also exposes [Hardware Abstraction](https://docs.espressif.com/projects/esp-idf/en/v5.3.1/esp32s3/api-guides/hardware-abstraction.html) APIs. These APIs underpin large portions of the logic that the ESP-IDF is built on top of, and at the lower level they often interact with the hardware through inlined assembly calls in C, allowing GPIO operations to be performed in just a handful of CPU instructions. The tradeoff is that they require more care and discipline when writing and maintaining the code.
 
-<div data-component="GithubEmbed" data-url="https://github.com/espressif/esp-idf/blob/v5.3.1/components/hal/esp32s3/include/hal/dedic_gpio_cpu_ll.h#L46-L50"></div>
-<br />
-
-All the data required to run the matrix is stored in the `led_matrix_state_t` structure:
+All runtime state for the LED matrix is stored in the `led_matrix_state_t` struct:
 
 <div data-component="GithubEmbed" data-url="https://github.com/zbauman3/illumindex/blob/main/firmware/components/led_matrix/include/led_matrix.h#L100-L113"></div>
 <br />
 
-This structure holds a pointer to the pins that the LED matrix is connected to, pointer handles for the Dedicated GPIO bundle and the General Purpose Timer, the data buffer, and some miscellaneous info and state. The address pins (<span style="color:darkorange;">A0</span> ... <span style="color:darkorange;">A4</span>) and the output-enable pin (<span style="color:goldenrod;">Enabled</span>) are controlled through standard GPIO. The shift register pins (<span style="color:red;">Red1</span>, <span style="color:green;">Green1</span>, <span style="color:cornflowerblue;">Blue1</span>, <span style="color:red;">Red2</span>, <span style="color:green;">Green2</span>, <span style="color:cornflowerblue;">Blue2</span>, and <span style="color:goldenrod;">Clock</span>) and the latch pin (<span style="color:goldenrod;">Latch</span>) are controlled through Dedicated GPIO. This setup allows us to place both sets of RGB values for a top and bottom row pixel in the shift registers with two instructions! This is so fast at 240MHz, that we actually need to add a `nop` instruction in there to allow the shift registers to keep up:
+This struct contains pointers to the configured pins, handles for the Dedicated GPIO bundle and the general-purpose timer, the display data buffer, and some additional state used by the driver. The row address pins (A0 through A4) and the output-enable pin are driven using standard GPIO, while the shift register pins for both halves of the display (the RGB data lines, clock, and latch) are controlled using Dedicated GPIO.
+
+This split allows both the top and bottom row RGB values to be written to the shift registers in just two instructions. At 240 MHz, these writes occur so quickly that the shift registers themselves cannot keep up, requiring an explicit `nop` instruction to introduce a tiny delay between clock edges:
 
 <div data-component="GithubEmbed" data-url="https://github.com/zbauman3/illumindex/blob/main/firmware/components/led_matrix/led_matrix.c#L20-L25"></div>
 <br />
 
-This setup does not use double buffering, but the data buffer _is_ pre-processed. The buffer is a byte array that has been pre-computed so that each byte can be passed directly to the Dedicated GPIO as a output value. Each byte is in the format `0,0,R1,G1,B1,R2,G2,B2`, and bits 6 and 7 are used for the clock and latch pins, respectively.
+The implementation does not use double buffering, but the display data is pre-processed before being rendered. The frame buffer is stored as a byte array where each byte directly corresponds to a Dedicated GPIO output value. Each byte is laid out in the form `0,0,R1,G1,B1,R2,G2,B2`, with the remaining two bits reserved for control signals such as the clock and latch. This allows each column's RGB data to be shifted out with a single write operation.
 
-Excluding all of the setup logic, the actual implementation of the algorithm is fairly straight forward:
+With the setup and preprocessing in place, the core rendering logic itself is relatively straightforward. One detail worth noting is that the `shift_out_row` function is a macro that unrolls the writes for all 64 columns.
 
-<div data-component="GithubEmbed" data-url="https://github.com/zbauman3/illumindex/blob/9002033e2cfc9e8c272175366cfaf366bd102afe/firmware/components/led_matrix/led_matrix.c#L105-L164"></div>
+<div data-component="GithubEmbed" data-url="https://github.com/zbauman3/illumindex/blob/main/firmware/components/led_matrix/led_matrix.c#L105-L164"></div>
 <br />
-
-The `shift_out_row` call is a little misleading in its simplicity. This is really a macro that is unwinding a loop to shift out the 64 RGB values for the columns using `dedic_gpio_cpu_ll_write_mask` ([view the source here](https://github.com/zbauman3/illumindex/blob/main/firmware/components/led_matrix/led_matrix.c#L20-L94)).
 
 ### Everything Else
 
-Outside of the display driver, most of the software architecture is fairly mundane, so I won't talk too deeply about it. I broke down the individual pieces of the firmware into logical sections, depending on their purpose. The ESP-IDF has a concept for this called [Components](https://docs.espressif.com/projects/esp-idf/en/v5.3.1/esp32s3/api-guides/build-system.html#concepts). These components are: [led_matrix](https://github.com/zbauman3/illumindex/tree/main/firmware/components/led_matrix), [gfx](https://github.com/zbauman3/illumindex/tree/main/firmware/components/gfx), [network](https://github.com/zbauman3/illumindex/tree/main/firmware/components/network), [commands](https://github.com/zbauman3/illumindex/tree/main/firmware/components/commands), [display](https://github.com/zbauman3/illumindex/tree/main/firmware/components/display), [state](https://github.com/zbauman3/illumindex/tree/main/firmware/components/state), and [time_util](https://github.com/zbauman3/illumindex/tree/main/firmware/components/time_util). This block diagram shows a high-level overview of their interactions:
+Outside of the display driver, most of the software architecture is fairly mundane, so I will only cover it at a high level. The firmware is broken into logical units based on responsibility, using the ESP-IDF concept of [Components](https://docs.espressif.com/projects/esp-idf/en/v5.3.1/esp32s3/api-guides/build-system.html#concepts). Together, these components form a simple pipeline that moves data from the network to the display. At a glance, the firmware is composed of the following major components:
+
+- [led_matrix](https://github.com/zbauman3/illumindex/tree/main/firmware/components/led_matrix) – the low-level display driver described earlier
+- [gfx](https://github.com/zbauman3/illumindex/tree/main/firmware/components/gfx) – generic graphics primitives and bitmapped fonts
+- [network](https://github.com/zbauman3/illumindex/tree/main/firmware/components/network) – WiFi management and HTTP request helpers
+- [commands](https://github.com/zbauman3/illumindex/tree/main/firmware/components/commands) – parsing and representing display instructions received from the API
+- [display](https://github.com/zbauman3/illumindex/tree/main/firmware/components/display) – orchestration of rendering and data flow
+- [state](https://github.com/zbauman3/illumindex/tree/main/firmware/components/state) – shared application state
+- [time_util](https://github.com/zbauman3/illumindex/tree/main/firmware/components/time_util) – time utilities
 
 ```mermaid
 flowchart TD
@@ -217,16 +247,13 @@ flowchart TD
 
 <br />
 
-The `gfx` component contains `gfx/display_buffer` and `gfx/font`. These offer generic primitives for working with bitmapped graphics like drawing text and lines.
+The `gfx` component provides low-level drawing primitives, including a display buffer and font support. These utilities operate on bitmapped graphics and expose functions for drawing text and lines.
 
-The `network` component contains `network/wifi` and `network/fetch`. These offer wrappers around the ESP-IDF's APIs for managing the WiFi connection and making network requests.
+The `network` component wraps ESP-IDF networking APIs and is responsible for managing the WiFi connection and making HTTP requests.
 
-The `commands` component contains all of the logic required for processing API responses into JSON then simplified C structs. This allows the API data to be stored as simple commands that are then applied to the display buffer using the `gxf` component. This method massively reduces the amount of data that the API endpoint needs to transfer. Instead of massive bitmaps, the API returns commands that generate bitmaps. As an example, this is the structure of a command to draw a line:
+The `commands` component is responsible for transforming API responses into simplified C structures that represent drawing operations. Instead of transferring full bitmap data over the network, the API returns a compact set of commands that describe how to generate the image locally. These commands are then applied to the display buffer using the `gfx` primitives.
 
-<div data-component="GithubEmbed" data-url="https://github.com/zbauman3/illumindex/blob/main/firmware/components/commands/include/commands.h#L81-L85"></div>
-<br />
-
-The `display` and `state` components tie together the whole system. These are responsible for initiating all components, periodically refetching data using `network/fetch`, passing the response to `commands` for processing, applying commands to the raw buffer via `gfx/display_buffer`, and preprocessing the final data buffer for the display driver.
+Finally, the `display` and `state` components tie the system together. They initialize all subsystems, periodically fetch new data via the `network` component, pass responses to `commands` for processing, apply the resulting drawing commands to the display buffer, and preprocess the final buffer for consumption by the LED matrix driver.
 
 ## AI/LLM Involvement
 
