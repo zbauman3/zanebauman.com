@@ -9,9 +9,21 @@ lastModified: 11/29/2025
 image: /assets/illumindex/cover.png
 -->
 
-## The Hardware
+## About
 
-Before diving into the software, it's important to understand the physical layer that the display driver interacts with. All LEDs are never illuminated at the same time in an LED matrix display. Instead, only two rows are illuminated at any given moment – one row on the top half of the display and one row on the bottom half. To show an image on the display, we must cycle through all rows of the display fast enough to trick the human eye into seeing a solid image. Luckily, achieving that speed is trivial for a computer. The ESP32S3 I'm using for this project has two cores operating at 240MHz, which allows me to dedicate one core to the display driver and the other core to everything else.
+This project started as a simple idea: I wanted a small display on my desk that could show bits of information throughout the day. There are already a ton of these informational displays on the market, but if I’m being honest, actually having the display was never as interesting to me as building it. I’d always wondered how LED matrix displays worked, and combining one with networking sounded like a great excuse to also explore IoT development.
+
+Thus "Illumindex" was born, short for "Illuminated Information Index" (yes, the second "i" stands for information, not index). It is not a great name, but I am terrible at naming things, and that is not really the point of this project anyway.
+
+## Software
+
+### The Display Driver
+
+> The software is open source and available at [github.com/zbauman3/illumindex](https://github.com/zbauman3/illumindex).
+
+#### What is an LED Matrix?
+
+Before diving into the software, it's important to understand the physical layer that the display driver interacts with. All LEDs are never illuminated at the same time in an LED matrix display. Instead, only two rows are illuminated at any given moment – one row on the top half of the display and one row on the bottom half. To show an image on the display, we must cycle through all rows of the display fast enough to trick the human eye into seeing a solid image. Luckily, achieving that speed is trivial for a computer. The ESP32-S3 I'm using for this project has two cores operating at 240MHz, which allows me to dedicate one core to the display driver and the other core to everything else.
 
 The display I'm using is 64x64 RGB LEDs. The display is divided into two halves, top and bottom. Each half is 64x32 and has hardware to control that half. There are three 64-bit shift registers – one for red, green, and blue – that represent the columns of the display. Between these shift registers and the LEDs are latch circuits. This allows the the data for all 64 columns to be shifted in slowly and then shown all at once by toggling the latch signal. These latches also have a signal that can be used to enable/disable their output, which is used in the algorithm below.
 
@@ -114,7 +126,7 @@ flowchart LR
 
 <br />
 
-## The Algorithm
+#### The Algorithm
 
 Now that we understand the hardware involved, we can discuss _how_ to show an image on the display using software. There are different algorithms for driving the display, but I built mine with [24 bit, true color](<https://en.wikipedia.org/wiki/Color_depth#True_color_(24-bit)>). Meaning, pixels have 1 byte of data each for red, green, and blue – but as discussed above, we can only ever turn a given pixel on or off, giving us 8 possible combinations. To turn these three bytes of data into the 16,777,216 colors available in 24 bit color, we'll need to incorporate a form of [pulse-width modulation](https://en.wikipedia.org/wiki/Pulse-width_modulation) called "binary coded modulation". Here's the algorithm:
 
@@ -137,52 +149,37 @@ Picking this base amount of time is a balance between the capabilities of the MC
 
 In this calculation, `cycles` is the number of CPU cycles to complete the algorithm for a single bit. Dividing this by the CPU frequency, adding in misc overhead, and multiplying by 8, gives us _active CPU time_ for one byte being processed by the algorithm (`oneByte`). From there we add the total amount of time waiting between each bit in a byte (`rowTimers`), and multiply by 32 for all rows. This leaves us with a screen refresh rate of 119.05Hz. It's not a perfect 120, but it's good enough for me.
 
-## The Implementation
+#### The Implementation
 
-<!--
-TODO:
-- Why I didn't use MQTT
+There's a ton of options to use when implementing this algorithm in an ESP32-S3. I ended up using a combination of [Dedicated GPIO](https://docs.espressif.com/projects/esp-idf/en/v5.3.1/esp32s3/api-reference/peripherals/dedic_gpio.html), [Standard GPIO](https://docs.espressif.com/projects/esp-idf/en/v5.3.1/esp32s3/api-reference/peripherals/gpio.html), and [General Purpose Timer](https://docs.espressif.com/projects/esp-idf/en/v5.3.1/esp32s3/api-reference/peripherals/gptimer.html). There are definitely more efficient ways of implementing this, the most obvious being the combination of SPI and DMA, but I wanted to have deep interaction with the output to keep things simple.
 
+Using these peripherals through the ESP-IDF's high-level APIs adds a lot of overhead, due to additional safety checks and conditional logic. When you're trying to implement this algorithm in a few thousand CPU cycles, all of those additional checks begin to add up. For scenarios where you want to interact with the hardware at a much lower level, the ESP-IDF offers the [Hardware Abstraction](https://docs.espressif.com/projects/esp-idf/en/v5.3.1/esp32s3/api-guides/hardware-abstraction.html) APIs. These APIs underpin large portions of the logic that the ESP-IDF is built on top of, and at the lower level they often interact with the hardware through inlined assembly calls in C, making them ideal for writing fast logic at the cost of needing to use extra care with the implementation. Using this method can reduce the number of instructions required to flip bits to a handful of instructions. For example, outputting 8 bits with Dedicated GPIO in a single instruction:
 
-## About
+<div data-component="GithubEmbed" data-url="https://github.com/espressif/esp-idf/blob/v5.3.1/components/hal/esp32s3/include/hal/dedic_gpio_cpu_ll.h#L46-L50"></div>
+<br />
 
-This project started as a simple idea: I wanted a small display on my desk that could show bits of information throughout the day. There are already a ton of these informational displays on the market, but if I’m being honest, actually having the display was never as interesting to me as building it. I’d always wondered how LED matrix displays worked, and combining one with networking sounded like a great excuse to also explore IoT development.
+All the data required to run the matrix is stored in the `led_matrix_state_t` structure:
 
-Thus "Illumindex" was born, short for "Illuminated Information Index" (yes, the second "i" stands for information, not index). It is not a great name, but I am terrible at naming things, and that is not really the point of this project anyway.
+<div data-component="GithubEmbed" data-url="https://github.com/zbauman3/illumindex/blob/main/firmware/components/led_matrix/include/led_matrix.h#L100-L113"></div>
+<br />
 
-The hardware for this project is incredibly minimal, so this post will focus mostly on the software. I will be diving very deep into many different aspects of the code, and hopefully you will learn something interesting along the way. At the very least, each section begins with a high-level overview, so even skimming the article should be somewhat interesting.
+This structure holds a pointer to the pins that the LED matrix is connected to, pointer handles for the Dedicated GPIO bundle and the General Purpose Timer, the data buffer, and some miscellaneous info and state. The address pins (<span style="color:darkorange;">A0</span> ... <span style="color:darkorange;">A4</span>) and the output-enable pin (<span style="color:goldenrod;">Enabled</span>) are controlled through standard GPIO. The shift register pins (<span style="color:red;">Red1</span>, <span style="color:green;">Green1</span>, <span style="color:cornflowerblue;">Blue1</span>, <span style="color:red;">Red2</span>, <span style="color:green;">Green2</span>, <span style="color:cornflowerblue;">Blue2</span>, and <span style="color:goldenrod;">Clock</span>) and the latch pin (<span style="color:goldenrod;">Latch</span>) are controlled through Dedicated GPIO. This setup allows us to place both sets of RGB values for a top and bottom row pixel in the shift registers with two instructions! This is so fast at 240MHz, that we actually need to add a `nop` instruction in there to allow the shift registers to keep up:
 
-### Architectural Overview
+<div data-component="GithubEmbed" data-url="https://github.com/zbauman3/illumindex/blob/main/firmware/components/led_matrix/led_matrix.c#L20-L25"></div>
+<br />
 
-Since this was my first exploration into the world of IoT, I wanted to focus heavily on the embedded side of the project. Specifically, I wanted hands-on experience writing a decently robust network stack for the firmware. This included everything from establishing a WiFi connection, handling reconnections, and syncing with NTP servers, to wrapping low-level HTTP requests with a higher-level "fetch" abstraction for working with JSON REST endpoints. Luckily, ESP-IDF provides a vast library of APIs that handle most of the extremely low-level networking details (alas, I did not write my own TCP/IP stack).
+This setup does not use double buffering, but the data buffer _is_ pre-processed. The buffer is a byte array that has been pre-computed so that each byte can be passed directly to the Dedicated GPIO as a output value. Each byte is in the format `0,0,R1,G1,B1,R2,G2,B2`, and bits 6 and 7 are used for the clock and latch pins, respectively.
 
-Outside of the network stack, I also wanted to build the display driver and a small set of utilities for working with bitmap graphics, including custom ASCII fonts, simple shapes, and graphs. But I didn’t want to base these on code I had seen elsewhere or simply copy other solutions. I wanted to genuinely learn the challenges of these systems and write the implementations according to my own understanding and capabilities.
+Excluding all of the setup logic, the actual implementation of the algorithm is fairly straight forward:
 
-That is not to say I avoided other libraries or articles. All of the code here is my own, but I gained a huge amount of insight and direction from open-source projects and technical articles, many of which were incredibly helpful in guiding me through difficult problems. I will discuss these sources in their relevant sections below.
+<div data-component="GithubEmbed" data-url="https://github.com/zbauman3/illumindex/blob/9002033e2cfc9e8c272175366cfaf366bd102afe/firmware/components/led_matrix/led_matrix.c#L105-L164"></div>
+<br />
 
-For the cloud backend, I went with what I know well from work. The backend is written in TypeScript/Node.js and hosted on one of [Vercel’s hobby plans](https://vercel.com/pricing). For simplicity of maintenance, speed of execution, and cost, Vercel made the most sense to me. I initially planned to use Next.js as a quick way to deliver simple Node.js logic to [Lambda functions](https://aws.amazon.com/lambda/), but I eventually added some UI development utilities to the application that can also be accessed via the local development server.
+The `shift_out_row` call is a little misleading in its simplicity. This is really a macro that is unwinding a loop to shift out the 64 RGB values for the columns using `dedic_gpio_cpu_ll_write_mask` ([view the source here](https://github.com/zbauman3/illumindex/blob/main/firmware/components/led_matrix/led_matrix.c#L20-L94)).
 
-### AI/LLM Involvement
+### Everything Else
 
-It’s the end of 2025 at the time of writing. LLMs are everywhere and anyone in the tech industry is aware that they're nearly inescapable at this point. Endless discussions are being had about the future of software engineering and how LLMs fit into it – or maybe, how humans fit into it. I don’t believe this article is the place for me to brain dump my opinions. However, I will say that I am especially concerned with patterns we are beginning to see. More and more engineers use LLMs to achieve a goal, but then move on without taking time to learn from the problems that they have just solved.
-
-I believe that growth in _engineering fundamentals_ is a journey that never ends, and outsourcing thought and understanding to LLMs will have deep, negative impacts on engineers in the long run. Less human involvement in software engineering may be the future, and that's okay. But for now, I _like_ software engineering and deeply value the growth that comes from understanding a problem and designing a solution.
-
-This project was written without _any_ LLM "agent" involvement. It _was_ written with LLM autocomplete "suggestions". To me, this is the perfect symbiosis between LLMs and software engineering. It allows me to drive the line-by-line architecture of the system, encounter problems, explore solutions, choose the directions of the software, and maintain a deep understanding of the system, while at the same time speeding up development and reducing physical fatigue.
-
-This article, however, has been significantly reviewed and edited by an LLM. I've written all initial versions, but I've also passed the output to an LLM for corrections and consistency.
-
-## Software
-
-> The software is open source and available at [github.com/zbauman3/illumindex](https://github.com/zbauman3/illumindex).
-
-While the firmware was built using Espressif's [ESP-IDF](https://docs.espressif.com/projects/esp-idf/en/v5.3.1/esp32s3) (through their wonderful [ESP-IDF Extension for VSCode](https://docs.espressif.com/projects/vscode-esp-idf-extension/)), there were no other dependencies in this project outside of the standard library that the the ESP-IDF provides. Since this was a learning experience, rather than a project with a deadline, I wanted to make sure that I was involved in writing all of the application logic.
-
-I broke down the individual pieces of the firmware into logical sections, depending on their purpose. The ESP-IDF has a concept for this called [Components](https://docs.espressif.com/projects/esp-idf/en/v5.3.1/esp32s3/api-guides/build-system.html#concepts). These components are: [led_matrix](), [network](), [gfx](), [commands](), [display](), [state](), and [time_util]().
-
-I'll talk about each of these components in detail below.
-
--->
+Outside of the display driver, most of the software architecture is fairly mundane, so I won't talk too deeply about it. I broke down the individual pieces of the firmware into logical sections, depending on their purpose. The ESP-IDF has a concept for this called [Components](https://docs.espressif.com/projects/esp-idf/en/v5.3.1/esp32s3/api-guides/build-system.html#concepts). These components are: [led_matrix](https://github.com/zbauman3/illumindex/tree/main/firmware/components/led_matrix), [gfx](https://github.com/zbauman3/illumindex/tree/main/firmware/components/gfx), [network](https://github.com/zbauman3/illumindex/tree/main/firmware/components/network), [commands](https://github.com/zbauman3/illumindex/tree/main/firmware/components/commands), [display](https://github.com/zbauman3/illumindex/tree/main/firmware/components/display), [state](https://github.com/zbauman3/illumindex/tree/main/firmware/components/state), and [time_util](https://github.com/zbauman3/illumindex/tree/main/firmware/components/time_util). This block diagram shows a high-level overview of their interactions:
 
 ```mermaid
 flowchart TD
@@ -218,65 +215,28 @@ flowchart TD
   state --> fetch
 ```
 
-<!--
-
 <br />
 
-### led_matrix
+The `gfx` component contains `gfx/display_buffer` and `gfx/font`. These offer generic primitives for working with bitmapped graphics like drawing text and lines.
 
-The core part of this project is arguably the display driver. It's also the reason I wanted to do this project in the first place. So this component is the one that I easily spent the most time on. I watched a lot of YouTube videos and read a lot of articles on how these display drivers work. But I ultimately ended up getting the best overview from [this lovely article](https://bikerglen.com/projects/lighting/led-panel-1up/) by [Glen Akins](https://www.youtube.com/@GlenAkins/videos). Much of what I will talk about below is covered in much more detail there.
+The `network` component contains `network/wifi` and `network/fetch`. These offer wrappers around the ESP-IDF's APIs for managing the WiFi connection and making network requests.
 
+The `commands` component contains all of the logic required for processing API responses into JSON then simplified C structs. This allows the API data to be stored as simple commands that are then applied to the display buffer using the `gxf` component. This method massively reduces the amount of data that the API endpoint needs to transfer. Instead of massive bitmaps, the API returns commands that generate bitmaps. As an example, this is the structure of a command to draw a line:
 
-
+<div data-component="GithubEmbed" data-url="https://github.com/zbauman3/illumindex/blob/main/firmware/components/commands/include/commands.h#L81-L85"></div>
 <br />
 
+The `display` and `state` components tie together the whole system. These are responsible for initiating all components, periodically refetching data using `network/fetch`, passing the response to `commands` for processing, applying commands to the raw buffer via `gfx/display_buffer`, and preprocessing the final data buffer for the display driver.
 
-#### The implementation
+## AI/LLM Involvement
 
-There's many ways to implement this algorithm with the hardware and peripherals in an ESP32-S3 – DMA, octal SPI, dedicated GPIO bundles, individual GPIO bit banging, and more. What you choose is largely dependent on the time you want to invest, familiarity with the peripherals, and the requirements of the overall system.
+It’s the end of 2025 at the time of writing. LLMs are everywhere and anyone in the tech industry is aware that they're nearly inescapable at this point. Endless discussions are being had about the future of software engineering and how LLMs fit into it – or maybe, how humans fit into it. I don’t believe this article is the place for me to brain dump my opinions. However, I will say that I am especially concerned with patterns we are beginning to see. More and more engineers use LLMs to achieve a goal, but then move on without taking time to learn from the problems that they have just solved. This velocity is important for business objectives, but is not ideal for skills growth.
 
-For my implementation, I chose to use a combination of [Dedicated GPIO](https://docs.espressif.com/projects/esp-idf/en/v5.3.1/esp32s3/api-reference/peripherals/dedic_gpio.html), standard GPIO, and [General Purpose Timers](https://docs.espressif.com/projects/esp-idf/en/v5.3.1/esp32s3/api-reference/peripherals/gptimer.html). Using these peripherals through the ESP-IDF provides a lot of niceties and protection logic. But when trying to build a performant display driver in software, those features actually slowed down the driver significantly. As a result, I instead decided to use the ESP-IDF's [Hardware Abstraction Layer APIs](https://github.com/espressif/esp-idf/tree/v5.3.1/components/hal). These are somewhat unstable APIs, as they are likely to change from version to version of the ESP-IDF. Using the "Lower Level" of these APIs gave even better performance, but with minimal protections. Looking at the source, these APIs are really just setting raw bits in registers, often using inline assembly:
+I believe that growth in _engineering fundamentals_ is a journey that never ends, and outsourcing thought and understanding to LLMs will have deep, negative impacts on engineers in the long run. Less human involvement in software engineering may be the future, and that's okay. But for now, I _like_ software engineering and deeply value the growth that comes from understanding a problem and designing a solution.
 
-<div data-component="GithubEmbed" data-url="https://github.com/espressif/esp-idf/blob/c8fc5f643b7a7b0d3b182d3df610844e3dc9bd74/components/hal/esp32s3/include/hal/dedic_gpio_cpu_ll.h#L46-L50"></div>
+This project was written without _any_ LLM "agent" involvement. It _was_ written with LLM autocomplete "suggestions". To me, this is the perfect symbiosis between LLMs and software engineering. It allows me to drive the line-by-line architecture of the system, encounter problems, explore solutions, choose the directions of the software, and maintain a deep understanding of the system, while at the same time speeding up development and reducing physical fatigue.
 
-<br />
-
-Using Dedicated GPIO means that we can use bit masks to drive 8 bits in a single instruction. It turns out that this is great for working with the 6 bits for 2xRGB and the clock signal. This lets us shift out 1 bit with two instructions: clock low and data bits set, then clock high and data bits persist, then repeat. Unfortunately, with the ESP32-S3 running at 240 MHz, this is actually too fast for the shift registers in the display, and we have to add a nop cycle in there, too:
-
-<div data-component="GithubEmbed" data-url="https://github.com/zbauman3/illumindex/blob/main/firmware/components/led_matrix/led_matrix.c#L20-L25"></div>
-
-<br />
-
-Putting all of this together, we can see that implementing the actual algorithm is fairly simple. This does not include the unrolled logic for shifting out a row, but it's the same as the snippet above, times 64:
-
-<div data-component="GithubEmbed" data-url="https://github.com/zbauman3/illumindex/blob/main/firmware/components/led_matrix/led_matrix.c#L105-L164"></div>
-
-### network
-
-#### WiFi
-
-#### Fetch
-
-### gfx
-
-#### Display Buffer
-
-#### Fonts
-
-- Bitmap Fonts: http://www.piclist.com/tecHREF/datafile/charset/extractor/charset_extractor.htm
-  - https://bitmap-code-generator.benalman.com/
-
-### commands
-
-### display
-
-### state
-
-### time_util
-
-<div data-component="GithubEmbed" data-url="https://github.com/zbauman3/illumindex/blob/main/server/src/components/Bitmap.tsx#L1-L2"></div>
-
-<br />
+This article, however, has been significantly reviewed and edited by an LLM. I've written all initial versions, but I've also passed the output to an LLM for corrections and consistency.
 
 ## Hardware
 
@@ -325,4 +285,3 @@ The schematic was designed with KiCad.
 - [illumindex.kicad_sch](https://github.com/zbauman3/illumindex/blob/main/hardware/illumindex.kicad_sch)
 
 <img src="/assets/illumindex/schema.png" style="width: 100%; max-width: 400px;" />
--->

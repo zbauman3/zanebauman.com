@@ -87,7 +87,7 @@ const fetchContent = async ({
     content = selectedLines.join("\n");
   }
 
-  return content.trim();
+  return content.replace(/(^\n+|\n+$)/, "");
 };
 
 const lineCountPrefix = ({
