@@ -1,11 +1,11 @@
 <!--
 title: Illumindex
 description: An exploration of display drivers and IoT systems, from scratch.
-active: false
+active: true
 slug: illumindex
 tags: esp32, esp32-s2, Espressif, 3D-printing, graphics, highlight, Node.js, iot
-date: 11/29/2025
-lastModified: 11/29/2025
+date: 12/21/2025
+lastModified: 12/21/2025
 image: /assets/illumindex/cover.png
 -->
 
@@ -21,9 +21,9 @@ Thus "Illumindex" was born, short for "Illuminated Information Index" (yes, the 
 
 The primary goal of this project, from a software perspective, was to learn how to build a display driver and design a small but complete IoT system from the ground up. To support that goal, I chose to write all of the application code myself. No third-party libraries are used in the firmware; the roughly 4,000 lines of code that make up the system are entirely my own.
 
-The project is built on top of the [ESP-IDF](https://docs.espressif.com/projects/esp-idf/en/v5.3.1/esp32s3/get-started/index.html), the official SDK provided by Espressif for the ESP32 family of microcontrollers. Using the ESP-IDF provides access to the underlying hardware, startup code, and toolchain support without abstracting away the details that are important when working close to the metal.
+The project is built on top of the [ESP-IDF](https://docs.espressif.com/projects/esp-idf/en/v5.3.1/esp32s3/get-started/index.html), the official SDK provided by Espressif for the ESP32 family of microcontrollers. Using the ESP-IDF provides access to the underlying hardware, startup code, and toolchain support without abstracting away the details that are important when working close to the metal. It also provides some useful utilities that saved me a ton of time, like [cJSON](https://github.com/DaveGamble/cJSON).
 
-For the backend, I used a simple serverless application built with Next.js and deployed on Vercel. This stack mirrors what I use day to day at work, which made it easy to stand up a basic API endpoint quickly and iterate without friction. The backend primarily serves as a lightweight data source for the device, but also houses some visual development utilities like a local simulator that mirrors the current state of the LED matrix and a small utility for drawing and generating bitmaps.
+For the backend, I used a simple serverless application built with Next.js and deployed on Vercel. This is what I use day to day at work, which made it easy to stand up a basic API endpoint and iterate. The backend primarily serves as a lightweight data source for the device, but also houses some visual development utilities like a local simulator that mirrors the current state of the LED matrix and a small utility for drawing and generating bitmaps.
 
 ### The Display Driver
 
@@ -35,7 +35,7 @@ Before diving into the software, it is important to understand the physical laye
 
 The display used here is a 64x64 RGB LED matrix. It is divided into two halves, top and bottom, with each half measuring 64x32 and containing its own control hardware. Each half uses three 64-bit shift registers, one for red, green, and blue, which represent the columns of the display. Between these shift registers and the LEDs are latch circuits. These latches allow the data for all 64 columns to be shifted in slowly and then displayed simultaneously by toggling the latch signal. The latches also expose an enable/disable signal, which is used by the driver algorithm described later.
 
-Row selection is handled by a 5-to-32 address decoder. Conceptually, the address decoder selects which row is connected to the negative side of the circuit, while the shift registers determine which columns drive the positive side for red, green, and/or blue. With simple on/off control of red, green, and blue, the display is limited to eight colors: red, green, blue, cyan, magenta, yellow, black, and white. Producing additional colors requires more advanced techniques in the display driver that is covered below.
+Row selection is handled by a 5-to-32 address decoder. Conceptually, the address decoder selects which row is connected to the negative side of the circuit, while the shift registers determine which columns drive the positive side for red, green, and/or blue. With simple on/off control of red, green, and blue, the display is limited to eight colors: red, green, blue, cyan, magenta, yellow, black, and white. Producing additional colors requires more advanced techniques in the display driver that is described later.
 
 Each half of the matrix has its own set of shift registers and latches. However, both halves share the clock signal for the shift registers, the latch control and enable signals, and the output from the address decoder. This means that while the columns on each half can be controlled independently, all other control signals operate in unison across the entire display.
 
@@ -46,7 +46,7 @@ flowchart LR
 
   subgraph bottomComp ["Bottom Color Control"]
     direction TB
-    matrixLatchB@{ shape: rounded, label: "&nbsp;\nRGB\nOutput Latch\n&nbsp;" }
+    matrixLatchB@{ shape: rounded, label: "&nbsp;\nRGBx64\nOutput Latch\n&nbsp;" }
     matrixShiftB@{ shape: rounded, label: "&nbsp;\nRGBx64\nShift Register\n&nbsp;" }
 
     matrixShiftB --RGB--- matrixLatchB
@@ -54,7 +54,7 @@ flowchart LR
 
   subgraph topComp ["Top Color Control"]
     direction TB
-    matrixLatchT@{ shape: rounded, label: "&nbsp;\nRGB\nOutput Latch\n&nbsp;" }
+    matrixLatchT@{ shape: rounded, label: "&nbsp;\nRGBx64\nOutput Latch\n&nbsp;" }
     matrixShiftT@{ shape: rounded, label: "&nbsp;\nRGBx64\nShift Register\n&nbsp;" }
 
     matrixShiftT --RGB--- matrixLatchT
@@ -136,9 +136,9 @@ flowchart LR
 
 #### The Algorithm
 
-Now that we understand the hardware involved, we can discuss how to show an image on the display using software. There are several possible approaches for driving an LED matrix, but the driver described here is built around [24 bit, true color](<https://en.wikipedia.org/wiki/Color_depth#True_color_(24-bit)>). Each pixel stores one byte each for red, green, and blue. As discussed earlier, however, the hardware can only turn each color channel fully on or fully off, giving us just eight possible color combinations per pixel. To translate 24-bit color data into the 16,777,216 possible colors of true color, the driver uses a form of [pulse-width modulation](https://en.wikipedia.org/wiki/Pulse-width_modulation) called binary coded modulation (BCM).
+Now that we understand the hardware involved, we can discuss how to show an image on the display using software. There are several possible approaches for driving an LED matrix, but the driver described here is built around [24 bit, true color](<https://en.wikipedia.org/wiki/Color_depth#True_color_(24-bit)>). Each pixel is stored with one byte each for red, green, and blue. As discussed earlier, the hardware can only turn each color channel fully on or fully off, giving us just eight possible color combinations per pixel. To translate the three bytes of color data into the 16,777,216 possible colors of true color, the driver uses a form of [pulse-width modulation](https://en.wikipedia.org/wiki/Pulse-width_modulation) called binary coded modulation (BCM).
 
-At a high level, the algorithm works by repeatedly displaying individual bits of the color data, holding more significant bits on the screen for longer periods of time. The steps below describe a single pass through the display:
+At a high level, the algorithm works by repeatedly displaying individual bits of the color data, holding more significant bits on the screen for longer periods of time. The steps below describe showing a single frame on the display:
 
 1. For each of the 64 columns, set <span style="color:red;">Red1</span>, <span style="color:green;">Green1</span>, <span style="color:cornflowerblue;">Blue1</span>, <span style="color:red;">Red2</span>, <span style="color:green;">Green2</span> and <span style="color:cornflowerblue;">Blue2</span> to the value of `bit N` in the RGB bytes for the current row. Toggle the <span style="color:goldenrod;">Clock</span> line to shift this data into the registers.
 2. Disable output using the <span style="color:goldenrod;">Enabled</span> line.
@@ -160,7 +160,7 @@ The most important part of this process is the delay in step 6. This delay is wh
 - Bit 6: 44.8µs
 - Bit 7: 89.6µs
 
-More significant bits remain illuminated for longer periods, which causes larger numerical values to appear brighter to the human eye, and enables mixing of different ratios of red, green, and blue to achieve "true color".
+This means that more significant bits remain illuminated for longer periods, which causes larger numerical values to appear brighter to the human eye. This also enables mixing of different ratios of red, green, and blue to achieve "true color".
 
 Choosing the base delay time is a balancing act between microcontroller performance and visible flickering. If the delay is too short, the MCU will not be able to complete all steps of the algorithm before moving on to the next row or bit. If the delay is too long, the total time required to draw all rows and bits increases, causing the display to appear flickery. Ideally, this value is tuned alongside the real-world execution time of the driver so that the entire display refreshes at a full-frame rate of roughly 120 to 240 Hz.
 
@@ -170,31 +170,33 @@ Here are the calculations I came up with for Illumindex:
 
 <br />
 
-In this calculation, `cycles` represents the number of CPU cycles required to execute the algorithm for a single bit. Dividing this value by the CPU frequency, accounting for miscellaneous overhead, and then multiplying by 8 yields the total active CPU time needed to process one byte of color data (`oneByte`).
+In this calculation, `cycles` represents the number of CPU cycles required to execute the algorithm for a single bit. Dividing this value by the CPU frequency, accounting for miscellaneous overhead, and then multiplying by 8 gives us the total active CPU time needed to process one byte of color data (`oneByte`).
 
 Next, the total delay time spent waiting between each bit (`rowTimers`) is added, and the result is multiplied by 32 to account for all rows in the display. This produces a full-screen refresh rate of 119.05 Hz. It's not a perfect 120, but it's good enough for me.
 
 #### The Implementation
 
-There are many ways to implement this algorithm on the ESP32-S3. For this project, I chose a combination of [Dedicated GPIO](https://docs.espressif.com/projects/esp-idf/en/v5.3.1/esp32s3/api-reference/peripherals/dedic_gpio.html), [Standard GPIO](https://docs.espressif.com/projects/esp-idf/en/v5.3.1/esp32s3/api-reference/peripherals/gpio.html), and [General Purpose Timer](https://docs.espressif.com/projects/esp-idf/en/v5.3.1/esp32s3/api-reference/peripherals/gptimer.html). While there are more efficient approaches (like using SPI with DMA) I wanted direct, fine-grained control over the output signals to keep the overall design and behavior easier to reason about.
+There are many ways to implement this algorithm on the ESP32-S3. For this project, I chose a combination of [Dedicated GPIO](https://docs.espressif.com/projects/esp-idf/en/v5.3.1/esp32s3/api-reference/peripherals/dedic_gpio.html), [Standard GPIO](https://docs.espressif.com/projects/esp-idf/en/v5.3.1/esp32s3/api-reference/peripherals/gpio.html), and [General Purpose Timer](https://docs.espressif.com/projects/esp-idf/en/v5.3.1/esp32s3/api-reference/peripherals/gptimer.html). While there are more efficient approaches (like using SPI with DMA) I wanted direct, fine-grained control over the output signals to keep the overall design and behavior easier to understand.
 
-Using the ESP-IDF high-level APIs introduces noticeable overhead due to safety checks and conditional logic. When the goal is to execute the display algorithm within a few thousand CPU cycles, that overhead adds up quickly. For lower-level, performance-critical code paths, ESP-IDF also exposes [Hardware Abstraction](https://docs.espressif.com/projects/esp-idf/en/v5.3.1/esp32s3/api-guides/hardware-abstraction.html) APIs. These APIs underpin large portions of the logic that the ESP-IDF is built on top of, and at the lower level they often interact with the hardware through inlined assembly calls in C, allowing GPIO operations to be performed in just a handful of CPU instructions. The tradeoff is that they require more care and discipline when writing and maintaining the code.
+Using the ESP-IDF high-level APIs introduces noticeable overhead due to safety checks and conditional logic. Since the display driver algorithm needs to execute within a few thousand CPU cycles, that overhead adds up quickly. For lower-level, performance-critical code paths, ESP-IDF also exposes [Hardware Abstraction](https://docs.espressif.com/projects/esp-idf/en/v5.3.1/esp32s3/api-guides/hardware-abstraction.html) APIs. These APIs underpin large portions of the logic that the ESP-IDF is built on top of, and at the lower level they often interact with the hardware through inlined assembly calls in C, allowing GPIO operations to be performed in just a handful of CPU instructions. The tradeoff is that they require more care and discipline when writing and maintaining the code.
 
 All runtime state for the LED matrix is stored in the `led_matrix_state_t` struct:
 
 <div data-component="GithubEmbed" data-url="https://github.com/zbauman3/illumindex/blob/main/firmware/components/led_matrix/include/led_matrix.h#L100-L113"></div>
 <br />
 
-This struct contains pointers to the configured pins, handles for the Dedicated GPIO bundle and the general-purpose timer, the display data buffer, and some additional state used by the driver. The row address pins (A0 through A4) and the output-enable pin are driven using standard GPIO, while the shift register pins for both halves of the display (the RGB data lines, clock, and latch) are controlled using Dedicated GPIO.
+This struct contains pointers to the configured pins, pointers to the Dedicated GPIO bundle and the general-purpose timer, the display data buffer, and some additional state used by the driver. The row address pins (A0 through A4) and the output-enable pin are driven using standard GPIO, while the shift register pins for both halves of the display (the RGB data lines, clock, and latch) are controlled using Dedicated GPIO.
 
 This split allows both the top and bottom row RGB values to be written to the shift registers in just two instructions. At 240 MHz, these writes occur so quickly that the shift registers themselves cannot keep up, requiring an explicit `nop` instruction to introduce a tiny delay between clock edges:
 
 <div data-component="GithubEmbed" data-url="https://github.com/zbauman3/illumindex/blob/main/firmware/components/led_matrix/led_matrix.c#L20-L25"></div>
 <br />
 
-The implementation does not use double buffering, but the display data is pre-processed before being rendered. The frame buffer is stored as a byte array where each byte directly corresponds to a Dedicated GPIO output value. Each byte is laid out in the form `0,0,R1,G1,B1,R2,G2,B2`, with the remaining two bits reserved for control signals such as the clock and latch. This allows each column's RGB data to be shifted out with a single write operation.
+The implementation does not use double buffering, but the display data is pre-processed before being rendered. The frame buffer is stored as a byte array where each byte directly corresponds to a Dedicated GPIO output value. Each byte is laid out in the form `0,0,R1,G1,B1,R2,G2,B2`, with the remaining two bits reserved for control signals such as the clock and latch. This allows each column's RGB data for both rows to be shifted out with a single write operation.
 
-With the setup and preprocessing in place, the core rendering logic itself is relatively straightforward. One detail worth noting is that the `shift_out_row` function is a macro that unrolls the writes for all 64 columns.
+The core rendering logic of the algorithm itself is relatively straightforward, and the loop for running this logic is controlled by the General Purpose Timer. One detail worth noting is that the `shift_out_row` function is a macro that unrolls the writes for all 64 columns.
+
+Here's the implementation:
 
 <div data-component="GithubEmbed" data-url="https://github.com/zbauman3/illumindex/blob/main/firmware/components/led_matrix/led_matrix.c#L105-L164"></div>
 <br />
