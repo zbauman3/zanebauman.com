@@ -5,7 +5,7 @@ active: true
 slug: illumindex
 tags: esp32, esp32-s3, Espressif, 3D-printing, graphics, highlight, Node.js, iot
 date: 12/21/2025
-lastModified: 12/21/2025
+lastModified: 12/22/2025
 image: /assets/illumindex/cover.png
 -->
 
