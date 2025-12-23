@@ -3,7 +3,7 @@ title: Illumindex
 description: An exploration of display drivers and IoT systems, from scratch.
 active: true
 slug: illumindex
-tags: esp32, esp32-s2, Espressif, 3D-printing, graphics, highlight, Node.js, iot
+tags: esp32, esp32-s3, Espressif, 3D-printing, graphics, highlight, Node.js, iot
 date: 12/21/2025
 lastModified: 12/21/2025
 image: /assets/illumindex/cover.png
@@ -13,13 +13,15 @@ image: /assets/illumindex/cover.png
 
 This project started as a simple idea: I wanted a small display on my desk that could show bits of information throughout the day. There are already a ton of these informational displays on the market, but if I’m being honest, actually having the display was never as interesting to me as building it. I’d always wondered how LED matrix displays worked, and combining one with networking sounded like a great excuse to also explore IoT development.
 
-Thus "Illumindex" was born, short for "Illuminated Information Index" (yes, the second "i" stands for information, not index). It is not a great name, but I am terrible at naming things, and that is not really the point of this project anyway.
+Thus "Illumindex" was born, short for "Illuminated Information Index".
+
+If you want to learn the nitty-gritty, low-level implementation of an LED matrix display and its driver – at the hardware and firmware level – this article will hopefully be informative and useful for you. If you just want to see the pictures and the parts list, [jump down to the sections after the software description](#aillm-involvement).
 
 ## Software
 
 > The software is open source and available at [github.com/zbauman3/illumindex](https://github.com/zbauman3/illumindex).
 
-The primary goal of this project, from a software perspective, was to learn how to build a display driver and design a small but complete IoT system from the ground up. To support that goal, I chose to write all of the application code myself. No third-party libraries are used in the firmware; the roughly 4,000 lines of code that make up the system are entirely my own.
+The primary goal of this project, from a software perspective, was to learn how to build a display driver and design a small but complete IoT system from the ground up. To support that goal, I chose to write all of the application code myself. No third-party libraries are used in the firmware, only the manufacturer SDK, the roughly 4,000 lines of code that make up the system are entirely my own.
 
 The project is built on top of the [ESP-IDF](https://docs.espressif.com/projects/esp-idf/en/v5.3.1/esp32s3/get-started/index.html), the official SDK provided by Espressif for the ESP32 family of microcontrollers. Using the ESP-IDF provides access to the underlying hardware, startup code, and toolchain support without abstracting away the details that are important when working close to the metal. It also provides some useful utilities that saved me a ton of time, like [cJSON](https://github.com/DaveGamble/cJSON).
 
@@ -31,7 +33,14 @@ The display driver is easily the most interesting part of this project, and will
 
 #### What is an LED Matrix?
 
-Before diving into the software, it is important to understand the physical layer that the display driver interacts with. In an LED matrix display, not all LEDs are illuminated at the same time. Instead, only two rows are active at any given moment: one row on the top half of the display and one row on the bottom half. To show an image, the system rapidly cycles through all rows of the display, fast enough to exploit persistence of vision and appear as a solid image. Achieving this refresh speed is trivial for a microcontroller. The ESP32-S3 used in this project has two cores operating at 240 MHz, which allows one core to be dedicated to the display driver while the other handles everything else.
+Before diving into the software, it is important to understand the physical layer that the display driver interacts with. An LED matrix display is nothing more than a grid where each point is made from small red, green, and blue LEDs:
+
+<div className="w-full overflow-x-hidden p-2 bg-stone-50 dark:bg-stone-900 rounded-md">
+  <img src="/assets/illumindex/matrix-leds.png" width="100%">
+</div>
+<br />
+
+In an LED matrix display, not all LEDs are illuminated at the same time. Instead, only two rows are active at any given moment: one row on the top half of the display and one row on the bottom half. To show an image, the system rapidly cycles through all rows of the display, fast enough to exploit persistence of vision and appear as a solid image. Achieving this refresh speed is trivial for a microcontroller. The ESP32-S3 used in this project has two cores operating at 240 MHz, which allows one core to be dedicated to the display driver while the other handles everything else.
 
 The display used here is a 64x64 RGB LED matrix. It is divided into two halves, top and bottom, with each half measuring 64x32 and containing its own control hardware. Each half uses three 64-bit shift registers, one for red, green, and blue, which represent the columns of the display. Between these shift registers and the LEDs are latch circuits. These latches allow the data for all 64 columns to be shifted in slowly and then displayed simultaneously by toggling the latch signal. The latches also expose an enable/disable signal, which is used by the driver algorithm described later.
 
@@ -41,96 +50,9 @@ Each half of the matrix has its own set of shift registers and latches. However,
 
 Here's a simplified block diagram of these physical components:
 
-```mermaid
-flowchart LR
-
-  subgraph bottomComp ["Bottom Color Control"]
-    direction TB
-    matrixLatchB@{ shape: rounded, label: "&nbsp;\nRGBx64\nOutput Latch\n&nbsp;" }
-    matrixShiftB@{ shape: rounded, label: "&nbsp;\nRGBx64\nShift Register\n&nbsp;" }
-
-    matrixShiftB --RGB--- matrixLatchB
-  end
-
-  subgraph topComp ["Top Color Control"]
-    direction TB
-    matrixLatchT@{ shape: rounded, label: "&nbsp;\nRGBx64\nOutput Latch\n&nbsp;" }
-    matrixShiftT@{ shape: rounded, label: "&nbsp;\nRGBx64\nShift Register\n&nbsp;" }
-
-    matrixShiftT --RGB--- matrixLatchT
-  end
-
-  subgraph "64x64 RGB LEDs"
-    direction TB
-    ledB@{ shape: rounded, label: "&nbsp;\n&nbsp;\n&nbsp;\n&nbsp;\n&nbsp;\nBottom\n64x32\nRGB LEDs\n&nbsp;\n&nbsp;\n&nbsp;\n&nbsp;\n&nbsp;" }
-    ledT@{ shape: rounded, label: "&nbsp;\n&nbsp;\n&nbsp;\n&nbsp;\n&nbsp;\nTop\n64x32\nRGB LEDs\n&nbsp;\n&nbsp;\n&nbsp;\n&nbsp;\n&nbsp;" }
-  end
-
-  matrixLatchB --RGBx64--- ledB
-  matrixLatchT --RGBx64--- ledT
-  address --"[0...31]" --- ledT
-  address --"[0...31]"--- ledB
-
-  Red1@{ shape: text } --- matrixShiftT
-  Green1@{ shape: text } --- matrixShiftT
-  Blue1@{ shape: text } --- matrixShiftT
-
-  Latch@{ shape: text } --- matrixLatchT
-  Clock@{ shape: text } --- matrixShiftT
-  Enabled@{ shape: text } --- matrixLatchT
-
-  Clock@{ shape: text } --- matrixShiftB
-  Latch@{ shape: text } --- matrixLatchB
-  Enabled@{ shape: text } --- matrixLatchB
-
-  Red2@{ shape: text } --- matrixShiftB
-  Green2@{ shape: text } --- matrixShiftB
-  Blue2@{ shape: text } --- matrixShiftB
-
-  address@{ shape: rounded, label: "&nbsp;\n&nbsp;\n5-to-32\nAddress Decoder\n&nbsp;\n&nbsp;" }
-
-  A0@{ shape: text } --- address
-  A1@{ shape: text } --- address
-  A2@{ shape: text } --- address
-  A3@{ shape: text } --- address
-  A4@{ shape: text } --- address
-
-  class Red1 redNode
-  class Red1 squishedText
-  class Green1 greenNode
-  class Green1 squishedText
-  class Blue1 blueNode
-  class Blue1 squishedText
-  class Red2 redNode
-  class Red2 squishedText
-  class Green2 greenNode
-  class Green2 squishedText
-  class Blue2 blueNode
-  class Blue2 squishedText
-  class Latch orangeNode
-  class Latch squishedText
-  class Clock orangeNode
-  class Clock squishedText
-  class Enabled orangeNode
-  class Enabled squishedText
-
-  class A0 yellowNode
-  class A0 squishedText
-  class A1 yellowNode
-  class A1 squishedText
-  class A2 yellowNode
-  class A2 squishedText
-  class A3 yellowNode
-  class A3 squishedText
-  class A4 yellowNode
-  class A4 squishedText
-
-  classDef redNode color:red, font-weight: bold
-  classDef greenNode color:green, font-weight: bold
-  classDef blueNode color:cornflowerblue, font-weight: bold
-  classDef orangeNode color:darkorange, font-weight: bold
-  classDef yellowNode color:goldenrod, font-weight: bold
-```
+<div className="w-full overflow-x-hidden px-1 py-2 bg-stone-50 dark:bg-stone-900 rounded-md">
+  <img src="/assets/illumindex/hardware-block-diagram.png" width="100%">
+</div>
 
 <br />
 
@@ -259,7 +181,7 @@ Finally, the `display` and `state` components tie the system together. They init
 
 ## AI/LLM Involvement
 
-It’s the end of 2025 at the time of writing. LLMs are everywhere and anyone in the tech industry is aware that they're nearly inescapable at this point. Endless discussions are being had about the future of software engineering and how LLMs fit into it – or maybe, how humans fit into it. I don’t believe this article is the place for me to brain dump my opinions. However, I will say that I am especially concerned with patterns we are beginning to see. More and more engineers use LLMs to achieve a goal, but then move on without taking time to learn from the problems that they have just solved. This velocity is important for business objectives, but is not ideal for skills growth.
+It’s the end of 2025 at the time of writing. LLMs are everywhere and anyone in the tech industry is aware that they're nearly inescapable at this point. Endless discussions are being had about the future of software engineering and how LLMs fit into it – or maybe, how humans fit into it. I don’t believe this article is the place for me to brain dump my opinions. But I'll say that I am concerned with the patterns that we are beginning to see. More and more engineers use LLMs to achieve a goal, but then move on without taking time to learn from the problems that they have just solved. This velocity is important for business objectives, but is not ideal for skills growth.
 
 I believe that growth in _engineering fundamentals_ is a journey that never ends, and outsourcing thought and understanding to LLMs will have deep, negative impacts on engineers in the long run. Less human involvement in software engineering may be the future, and that's okay. But for now, I _like_ software engineering and deeply value the growth that comes from understanding a problem and designing a solution.
 
